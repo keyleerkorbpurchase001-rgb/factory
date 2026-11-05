@@ -16,3 +16,7 @@ Machine data and photographs come from the plants' public equipment listings. Li
 # factory
 # factory
 # factory
+
+## Deploying to Vercel
+
+The portal is a static site with no build step. `vercel.json` tells Vercel to serve the repository root as is (no framework, no install or build command), caches the catalogue photos for a year and the plan views and previews for a day, and always revalidates the scripts and styles so a new push shows up at once. `.vercelignore` leaves the maintenance tools out of the deployment. In Vercel: Add New → Project → import this GitHub repository → keep the preset "Other" → Deploy. Every push to `main` redeploys.

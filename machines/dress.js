@@ -50,8 +50,8 @@ function context(K,H,g,s,m){
  // A free height for a w×h plate on the face at z=fz round x: scanning down then up from the preferred y, away from
  // anything that already stands proud of that face there (windows, plates, screens, handles).
  const freeY=(fb,fz,x,w,h,prefY,extra=[])=>{const obs=parts.filter(p=>{const b=p.box;return b.max.z>fz+.004&&b.min.z<fz+.35&&b.max.x>x-w/2&&b.min.x<x+w/2&&b.max.y>fb.min.y&&b.min.y<fb.max.y}).map(p=>p.box).concat(extra);
-  const lo=fb.min.y+h/2+.04,hi=fb.max.y-h/2-.04;if(lo>hi)return prefY;const ok=y=>!obs.some(b=>b.max.y>y-h/2-.02&&b.min.y<y+h/2+.02);
-  for(let k=0;k<40;k++){const d=Math.ceil(k/2)*.05*(k%2?-1:1),y=prefY+d;if(y<lo||y>hi)continue;if(ok(y))return y}return prefY};
+  const lo=fb.min.y+h/2+.015,hi=fb.max.y-h/2-.015;if(lo>hi)return null;const ok=y=>!obs.some(b=>b.max.y>y-h/2-.015&&b.min.y<y+h/2+.015);
+  for(let k=0;k<100;k++){const d=Math.ceil(k/2)*.025*(k%2?-1:1),y=prefY+d;if(y<lo||y>hi)continue;if(ok(y))return y}return null};
  // Tallest solid part with a real top to stand things on (boxes first).
  const topPart=(minW=.3)=>{let best=null;for(const p of solid){if(p.size.x<minW||p.size.z<minW)continue;const bx=p.type==='BoxGeometry';if(!best||(bx&&!best.bx)||(bx===best.bx&&p.box.max.y>best.box.max.y))best={bx,box:p.box,p}}return best};
  const hasTower=()=>parts.some(p=>p.type==='CylinderGeometry'&&p.p&&near(p.p.height,.07,.005)&&(near(p.p.radiusTop,.042,.003)||near(p.p.radiusTop,.028,.003)));
@@ -241,11 +241,12 @@ R.generic=c=>{const {at,step,face,faceStrict,freeY,topPart,bb,main,K,s}=c;
  const fb=F0.box,fw=fb.max.x-fb.min.x,fx=(fb.min.x+fb.max.x)/2,fz=fb.max.z;let fy=F0.round?(fb.min.y+fb.max.y)/2:Math.min(fb.max.y-.15,Math.max(fb.min.y+.15,1.3));
  const nw=Math.min(.45*fw,.9),nh=nw/4;
  // keep the plate clear of windows, screens, plates and handles already on that face
- if(!F0.round)fy=freeY(fb,fz,fx,nw,nh+.14,fy);
+ if(!F0.round)fy=freeY(fb,fz,fx,nw,nh+.14,fy)||freeY(fb,fz,fx,nw,nh,fy)||fy;
  const used=[{min:{y:fy-nh/2-.02},max:{y:fy+nh/2+.02}}];// what the plate and band take on the face, kept clear by the other rows
  step(()=>{const F=at(fx,0,fz);c.nameplate(F,0,fy,nw,nh);let by=fy+nh/2+.06;if(by+.03>fb.max.y)by=fy-nh/2-.06;if(!F0.round&&by-.03>fb.min.y&&fb.max.y-fb.min.y>.5){c.band(F,0,by,fw-.08,.06);used.push({min:{y:by-.03},max:{y:by+.03}})}});
  step(()=>{const C=faceStrict(.85,1.2,.35)||face(.85,1.2,.35)||F0;const cb=C.box,cw=cb.max.x-cb.min.x,cx=(cb.min.x+cb.max.x)/2;const F=at(cx,0,cb.max.z);const ex=Math.min(cw/2-.12,.6),same=Math.abs(cb.max.z-fz)<.05&&cb.max.x>fx-nw/2&&cb.min.x<fx+nw/2;
-  let ey=C.round?(cb.min.y+cb.max.y)/2:Math.min(cb.max.y-.08,Math.max(cb.min.y+.08,1.05));if(!C.round)ey=freeY(cb,cb.max.z,cx,2*ex+.12,.12,ey,same?used:[]);
+  let ey=C.round?(cb.min.y+cb.max.y)/2:Math.min(cb.max.y-.08,Math.max(cb.min.y+.08,1.05));if(!C.round){const fy2=freeY(cb,cb.max.z,cx,2*ex+.12,.12,ey,same?used:[]);
+   if(fy2===null){const ey2=freeY(cb,cb.max.z,cx,.1,.08,ey,same?used:[]);if(ey2!==null)c.estop(F,ex,ey2);return}ey=fy2}// a crowded face keeps its own controls; at most an e-stop joins them
   c.estop(F,ex,ey);c.keypad(F,ex-.22,ey,3,2,.02);c.warn(F,-ex,ey,.11);if(cw>1.6)c.buttons(F,ex-.45,ey,3)});
  step(()=>{const t=topPart(.3);if(t)c.towerIfNone(t.box.max.x-.15,t.box.max.y,t.box.min.z+.15)});
  step(()=>{const base=new c.T.Box3();for(const p of c.solid)if(p.box.min.y<.12&&p.size.x>.5&&p.size.z>.5)base.union(p.box);c.anchors(base.isEmpty()?bb:base,.03)});

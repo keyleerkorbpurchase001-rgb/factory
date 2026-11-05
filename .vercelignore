@@ -1,0 +1,5 @@
+# Build and maintenance tools: not part of the published site
+tools/*.py
+tools/*.mjs
+machines/KINDS.md
+.gitignore

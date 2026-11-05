@@ -32,27 +32,27 @@ const wheel=(K,parent,r,w,x,y,z,axis='x',hub=K.M.steel,tyre=null)=>{K.cyl(r,w,ty
 MB.add('stretchWrapper',(K,s)=>{const {H,P,M,T,g}=setup(K,s,{});
  const body=K.mat(0x3a3d41,.4,.55),dk=K.mat(0x25282b,.4,.6),film=K.mat(0xdfe8ee,.05,.2,{transparent:true,opacity:.45,depthWrite:false}),box=K.mat(0xb58a52,0,.85);
  // base plate, turntable with its yellow rim and the ramp
- K.box(2.3,.06,1.6,dk,0,.03,0,g);hazard(K,g,2.3,.05,0,.03,.806);hazard(K,g,1.6,.05,-1.156,.03,0,-PI/2);
- const tx=-.5;K.cyl(.78,.05,P.yellow,tx,.085,0,g,'y',48);
+ K.box(2.64,.06,1.6,dk,.1,.03,0,g);hazard(K,g,2.64,.05,.1,.03,.806);hazard(K,g,1.6,.05,-1.226,.03,0,-PI/2);
+ const tx=-.4;K.cyl(.78,.05,P.yellow,tx,.085,0,g,'y',48);
  const tt=H.grp(g,tx,0,0);K.cyl(.72,.05,body,0,.115,0,tt,'y',48);for(let i=0;i<12;i++){const a=i/12*PI*2;K.box(.12,.006,.04,P.yellow,Math.cos(a)*.62,.143,Math.sin(a)*.62,tt).rotation.y=-a}
- const ramp=K.box(1.1,.02,.62,dk,tx,.085,1.05,g);ramp.rotation.x=Math.atan2(.14,.6);hazard(K,g,1.1,.08,tx,.07,1.07,0,-PI/2+Math.atan2(.14,.6)).position.y=.092;
+ const ra=Math.atan2(.13,.42),ramp=K.box(1.1,.02,.44,dk,tx,.07,1.0,g);ramp.rotation.x=ra;hazard(K,g,1.1,.42,tx,.082,1.004,0,-PI/2+ra);
  // pallet with cartons on the table, the lower layers already wrapped
- H.pallet(tt,0,.14,0,1.2,.8);for(let l=0;l<3;l++)for(const sx of[-1,1])for(const sz of[-1,1])carton(K,tt,.56,.36,.38,sx*.3,.3+l*.37,sz*.2,box);
- K.box(1.24,.8,.84,film,0,.7,0,tt);
+ H.pallet(tt,0,.14,0,1.2,.8);for(let l=0;l<3;l++)for(const sx of[-1,1])for(const sz of[-1,1])carton(K,tt,.5,.36,.34,sx*.27,.3+l*.37,sz*.18,box);
+ K.box(1.1,.8,.74,film,0,.7,0,tt);
  // mast: drive base, column, guide rails, chain
- const mx=.85,mast=H.grp(g,mx,0,0);K.box(.5,.5,.62,body,.1,.31,0,mast);K.box(.52,.06,.64,dk,.1,.09,0,mast);hazard(K,mast,.5,.1,.1,.2,.316);
+ const mx=1.16,mast=H.grp(g,mx,0,0);K.box(.5,.5,.62,body,0,.31,0,mast);K.box(.52,.06,.64,dk,0,.09,0,mast);hazard(K,mast,.5,.1,0,.2,.316);
  K.box(.32,1.9,.36,body,0,1.45,-.05,mast);K.box(.36,.04,.4,dk,0,2.42,-.05,mast);for(let i=0;i<4;i++)K.box(.33,.008,.37,dk,0,.9+i*.4,-.05,mast);
  for(const sz of[-1,1])K.box(.02,1.8,.03,M.steel,-.165,1.4,-.05+sz*.12,mast);K.box(.01,1.8,.02,P.black,-.17,1.4,-.05,mast);
- K.cyl(.07,.22,P.blue,.1,.3,-.42,mast,'z',16);K.cyl(.05,.08,M.dark,.1,.3,-.56,mast,'z',12);H.hose(g,[[mx+.1,.3,-.58],[mx+.3,.18,-.72],[mx+.55,.03,-.78]],.012,P.black);
+ K.cyl(.07,.22,P.blue,0,.3,-.42,mast,'z',16);K.cyl(.05,.08,M.dark,0,.3,-.56,mast,'z',12);H.hose(g,[[mx,.3,-.58],[mx+.12,.12,-.62],[mx+.22,.03,-.62]],.012,P.black);
  // control panel on the front face of the mast
  K.box(.26,.6,.03,dk,0,1.55,.145,mast);H.screen(mast,0,1.7,.165,.2,.13,H.card(s));H.keypad(mast,0,1.48,.165,3,3,.028);H.estop(mast,.08,1.33,.17);H.warn(mast,-.07,1.33,.17,0,.08);
  H.logoBand(mast,s,.28,0,2.0,.137,.06);H.nameplate(mast,s,0,1.9,.137,.28,.08);K.plate(mast,'SW2',.2,.06,0,1.1,.137,'#e3b82e','#1c1b18');
- const bracket=K.box(.06,.04,.12,dk,0,1.78,-.3,mast),lt=H.lampTower(mast,0,1.8,-.33);
+ K.box(.14,.04,.12,dk,.22,1.95,-.05,mast);const lt=H.lampTower(mast,.3,1.97,-.05);
  // film carriage on the turntable side of the mast
- const c=H.grp(g,mx-.38,1.1,-.05);K.box(.36,.55,.42,body,0,0,0,c);K.box(.3,.02,.5,dk,-.2,.285,0,c);K.box(.3,.02,.5,dk,-.2,-.285,0,c);
- K.cyl(.125,.5,K.mat(0xe4ecf0,.1,.25,{transparent:true,opacity:.85}),-.3,0,0,c,'y',24);K.cyl(.04,.54,P.white,-.3,0,0,c,'y',12);for(const sz of[-1,1])K.cyl(.03,.5,P.black,-.2,0,sz*.22,c,'y',12);
+ const c=H.grp(g,mx-.38,1.2,-.05);K.box(.36,.55,.42,body,0,0,0,c);K.box(.3,.02,.5,dk,-.2,.285,0,c);K.box(.3,.02,.5,dk,-.2,-.285,0,c);
+ const roll=K.cyl(.125,.5,K.mat(0xe4ecf0,.1,.25,{transparent:true,opacity:.85}),-.3,0,0,c,'y',24);K.cyl(.04,.54,P.white,-.3,0,0,c,'y',12);for(const sz of[-1,1])K.cyl(.03,.5,P.black,-.2,0,sz*.22,c,'y',12);
  K.box(.1,.3,.06,dk,.19,0,0,c);K.box(.08,.02,.02,P.red,-.1,.2,.22,c);
- return {group:g,height:2.44,lamps:lt.lamps,update:(t,running)=>{if(!running)return;tt.rotation.y=t*.6;c.position.y=1.15+.6*Math.sin(t*.5)}};
+ return {group:g,height:2.59,lamps:lt.lamps,update:(t,running)=>{if(!running)return;tt.rotation.y=t*.6;c.position.y=1.2+.55*Math.sin(t*.5);roll.rotation.y=-t*4}};
 });
 
 // === shrinkHoodPacker: Thimon Coverpal stretch-hood portal ======================================================
@@ -62,7 +62,12 @@ MB.add('shrinkHoodPacker',(K,s)=>{const {H,P,M,T,g}=setup(K,s,{});
  for(const sx of[-1,1])for(const sz of[-1,1]){K.box(.16,Hh,.16,grey,sx*W/2,Hh/2,sz*D/2,g);K.box(.3,.03,.3,P.dark,sx*W/2,.015,sz*D/2,g);hazard(K,g,.16,.6,sx*W/2,.3,sz*D/2+.081)}
  for(const sz of[-1,1])K.box(W+.16,.16,.16,grey,0,Hh-.08,sz*D/2,g);for(const sx of[-1,1])K.box(.16,.16,D-.16,grey,sx*W/2,Hh-.08,0,g);
  // service platform with its rails, the film reel and the hood former up there
- K.platform(g,W+.4,D+.4,0,py,0,'nsew');
+ K.platform(g,W+.4,D+.4,0,py,0,'nsw');
+ // east rail in two pieces with a gap for the access ladder, which climbs the right side from the floor to the platform
+ const ex=W/2+.2,rail=(z0,z1)=>{const len=z1-z0,zc=(z0+z1)/2;K.box(.04,.04,len,P.yellow,ex,py+1.05,zc,g);K.box(.03,.03,len,P.yellow,ex,py+.55,zc,g);K.box(.02,.12,len,P.yellow,ex,py+.06,zc,g);for(const z of[z0+.02,z1-.02])K.box(.04,1.1,.04,P.yellow,ex,py+.55,z,g)};
+ rail(-D/2-.2,-.75);rail(-.25,D/2+.2);
+ const lx=ex+.14,lz=-.5;for(const sz of[-1,1])K.cyl(.02,py+1.1,M.steel,lx,(py+1.1)/2,lz+sz*.2,g,'y',10);for(let y=.3;y<py+1.0;y+=.3)K.cyl(.012,.4,M.steel,lx,y,lz,g,'z',8);
+ K.box(.16,.04,.44,M.steel,ex+.07,py-.04,lz,g);K.box(.1,.02,.5,P.dark,lx,.01,lz,g);
  for(const x of[-1.15,-.05])K.box(.06,.45,.1,grey,x,py+.225,0,g);K.cyl(.03,1.2,M.steel,-.6,py+.45,0,g,'x',10);K.cyl(.32,1.0,P.white,-.6,py+.45,0,g,'x',28);K.torus(.32,.01,P.light,-.1,py+.45,0,g,'x',28);
  for(const sx of[-1,1])K.cyl(.04,.4,M.steel,.6,py+.2,sx*.3,g,'y',10);K.box(.9,.06,.9,grey,.6,py+.43,0,g);K.box(.6,.3,.6,beige,.6,py+.6,0,g);K.plate(g,'HOOD FORMER',.5,.07,.6,py+.6,.31,'#1c1b18','#ecebe5');
  // guide rods and the hood frame with the heating ring that descends over the pallet
@@ -70,8 +75,8 @@ MB.add('shrinkHoodPacker',(K,s)=>{const {H,P,M,T,g}=setup(K,s,{});
  const hf=H.grp(g,0,1.8,0);for(const sz of[-1,1])K.box(1.7,.08,.08,grey,0,0,sz*.62,hf);for(const sx of[-1,1])K.box(.08,.08,1.32,grey,sx*.8,0,0,hf);
  for(const sz of[-1,1])K.box(1.5,.05,.05,heat,0,-.07,sz*.52,hf);for(const sx of[-1,1])K.box(.05,.05,1.1,heat,sx*.7,-.07,0,hf);for(const sx of[-1,1])for(const sz of[-1,1])K.cyl(.045,.12,P.dark,sx*.8,0,sz*.62,hf,'y',12);
  // infeed roller conveyor through the portal
- for(const sz of[-1,1])K.box(3.0,.1,.06,P.blue,0,.5,sz*.56,g);for(const x of[-1.35,-.45,.45,1.35])for(const sz of[-1,1]){K.box(.05,.45,.05,grey,x,.225,sz*.56,g);K.box(.14,.02,.12,P.dark,x,.01,sz*.56,g)}
- for(let i=0;i<22;i++)K.cyl(.035,1.06,M.steel,-1.4+i*.1333,.52,0,g,'z',12);K.box(.06,.08,1.0,M.dark,-1.45,.56,0,g);
+ for(const sz of[-1,1])K.box(2.5,.1,.06,P.blue,0,.5,sz*.56,g);for(const x of[-1.15,-.4,.4,1.15])for(const sz of[-1,1]){K.box(.05,.45,.05,grey,x,.225,sz*.56,g);K.box(.14,.02,.12,P.dark,x,.01,sz*.56,g)}
+ for(let i=0;i<18;i++)K.cyl(.035,1.06,M.steel,-1.15+i*.1353,.52,0,g,'z',12);K.box(.06,.08,1.0,M.dark,-1.22,.56,0,g);
  // wrapped pallet inside
  H.pallet(g,0,.555,0,1.2,.8);carton(K,g,1.1,.5,.72,0,.715,0,box);carton(K,g,1.1,.48,.72,0,1.22,0,box);K.box(1.24,1.06,.84,film,0,1.22,0,g);
  // control cabinet on the right with the screen, keypad, document pocket and lamp tower
@@ -80,7 +85,7 @@ MB.add('shrinkHoodPacker',(K,s)=>{const {H,P,M,T,g}=setup(K,s,{});
  H.screen(cab,0,1.6,.275,.32,.21,H.card(s));H.keypad(cab,-.12,1.3,.27,4,3,.025);H.estop(cab,.17,1.3,.275);H.warn(cab,.17,1.12,.275,0,.1);
  K.box(.3,.22,.01,P.white,-.08,.75,.268,cab);K.plate(cab,'COVERPAL',.3,.05,-.08,.82,.275,'#ffffff','#1d7448');
  H.nameplate(cab,s,0,1.88,.268,.5,.12);H.logoBand(cab,s,.7,0,.42,.268,.06);const lt=H.lampTower(cab,0,2.0,-.1);
- K.pipe([[cx,2.0,cz-.1],[cx,2.7,cz-.1],[1.3,2.7,cz-.1],[1.3,3.5,0]],.02,grey,g);K.box(.14,.12,.08,grey,1.3,3.45,.1,g);
+ K.pipe([[cx,2.0,cz+.15],[cx,2.7,cz+.15],[1.3,2.7,.9],[1.3,3.4,.9]],.02,grey,g);K.box(.1,.14,.1,grey,1.34,3.4,.9,g);
  // mesh fencing on the back and the left
  mesh(K,g,W+.4,2.0,0,1.05,-D/2-.14);for(const x of[-W/2-.2,0,W/2+.2])K.box(.05,2.05,.05,grey,x,1.03,-D/2-.14,g);K.box(W+.4,.04,.04,grey,0,2.05,-D/2-.14,g);
  mesh(K,g,D+.3,2.0,-W/2-.14,1.05,0,PI/2);for(const z of[-D/2-.15,D/2+.15])K.box(.05,2.05,.05,grey,-W/2-.14,1.03,z,g);K.box(.04,.04,D+.3,grey,-W/2-.14,2.05,0,g);
@@ -121,16 +126,16 @@ MB.add('shrinkWrapper',(K,s)=>{const {H,P,M,T,g}=setup(K,s,{});
 // === strappingMachine: FEIFER TP 410 semi-automatic strapper (opts.arch adds the banding arch) ==================
 MB.add('strappingMachine',(K,s)=>{const {H,P,M,T,g,o}=setup(K,s,{arch:false});
  const body=K.mat(0x8f9398,.35,.55),top=K.mat(0xd9d6cc,.2,.5),band=K.mat(0x1f2a2a,.1,.6);
- H.castors(g,1.0,.55,.1,.045);K.box(1.0,.02,.5,P.dark,.2,.12,0,g);K.box(1.0,.6,.55,body,.2,.43,0,g);
+ H.castors(g,1.0,.55,.1,.045);K.box(1.4,.03,.55,P.dark,0,.125,0,g);K.box(1.0,.6,.55,body,.2,.43,0,g);
  K.box(1.4,.04,.6,top,0,.75,0,g);K.box(.03,.006,.6,P.black,.05,.773,0,g);K.box(.25,.006,.12,P.dark,.05,.773,.12,g);K.box(1.4,.02,.02,P.dark,0,.76,.305,g);
  for(let i=0;i<3;i++)K.box(.95,.004,.01,P.dark,.2,.2+i*.18,.276,g);
  // front controls: panel with dials, keypad, main switch, e-stop, nameplate and band
  K.box(.4,.2,.012,P.dark,-.1,.6,.282,g);for(let i=0;i<2;i++){K.cyl(.025,.02,P.black,-.22+i*.1,.63,.29,g,'z',14);K.box(.004,.03,.01,P.white,-.22+i*.1,.645,.3,g)}
  H.keypad(g,.0,.6,.29,3,2,.022);K.box(.05,.05,.01,P.green,-.05,.53,.29,g);K.box(.05,.05,.01,P.red,.02,.53,.29,g);
  K.box(.08,.08,.012,P.yellow,.45,.6,.288,g);K.cyl(.02,.02,P.black,.45,.6,.3,g,'z',12);K.box(.012,.06,.015,P.red,.45,.6,.312,g).rotation.z=.6;K.plate(g,'0  I',.07,.02,.45,.65,.295,'#e3b82e','#1c1b18');H.estop(g,.6,.6,.282);
- H.nameplate(g,s,.3,.4,.282,.42,.09);H.logoBand(g,s,.95,.2,.17,.282,.04);K.plate(g,'TP 410',.2,.06,.55,.4,.282,'#1c1b18','#ecebe5');H.warn(g,-.55,.5,.282,0,.08);
+ H.nameplate(g,s,.3,.4,.282,.42,.09);H.logoBand(g,s,.95,.2,.17,.282,.04);K.plate(g,'TP 410',.2,.06,.55,.4,.282,'#1c1b18','#ecebe5');H.warn(g,-.2,.38,.284,0,.08);
  // strap coil on an axle in the open compartment on the left, the strap running up to the table slot
- K.box(.02,.55,.5,body,-.3,.45,0,g);K.cyl(.025,.3,M.steel,-.46,.42,0,g,'x',10);K.cyl(.19,.17,band,-.5,.42,0,g,'x',32);K.cyl(.08,.19,P.light,-.5,.42,0,g,'x',16);
+ K.box(.02,.6,.55,body,-.3,.43,0,g);K.box(.02,.6,.55,body,-.69,.43,0,g);K.box(.4,.6,.02,body,-.5,.43,-.265,g);K.cyl(.025,.38,M.steel,-.5,.42,0,g,'x',10);K.cyl(.19,.17,band,-.5,.42,0,g,'x',32);K.cyl(.08,.19,P.light,-.5,.42,0,g,'x',16);
  K.pipe([[-.5,.61,0],[-.45,.7,0],[-.2,.735,0],[.05,.74,0]],.005,band,g);
  // foot pedal and its cable
  K.box(.15,.03,.1,P.black,.2,.015,.42,g);K.box(.15,.01,.08,P.grey,.2,.035,.41,g).rotation.x=-.3;H.hose(g,[[.2,.02,.37],[.2,.02,.3],[.2,.1,.28]],.006,P.black);
@@ -144,26 +149,26 @@ MB.add('strappingMachine',(K,s)=>{const {H,P,M,T,g,o}=setup(K,s,{arch:false});
 MB.add('floorScale',(K,s)=>{const {H,P,M,T,g}=setup(K,s,{});
  const chk=checker(K,'#2d3f66'),box=K.mat(0xb58a52,0,.85);
  K.box(1.5,.08,1.5,chk,0,.06,0,g);for(const sx of[-1,1])for(const sz of[-1,1])K.cyl(.05,.02,P.dark,sx*.6,.01,sz*.6,g,'y',12);
- hazard(K,g,1.5,.07,0,.06,.756);hazard(K,g,1.5,.07,0,.06,-.756,PI);hazard(K,g,1.5,.07,.756,.06,0,PI/2);hazard(K,g,1.5,.07,-.756,.06,0,-PI/2);
- const a=Math.atan2(.1,.46);const ramp=K.box(1.5,.02,.47,chk,0,.058,.975,g);ramp.rotation.x=a;hazard(K,g,1.5,.06,0,.065,.97,0,-PI/2+a).position.y=.07;
+ hazard(K,g,1.5,.07,0,.06,-.756,PI);hazard(K,g,1.5,.07,.756,.06,0,PI/2);hazard(K,g,1.5,.07,-.756,.06,0,-PI/2);
+ const a=Math.atan2(.1,.28),ramp=K.box(1.5,.02,.3,chk,0,.055,.9,g);ramp.rotation.x=a;hazard(K,g,1.5,.28,0,.067,.904,0,-PI/2+a);
  H.pallet(g,0,.1,0,1.2,.8);carton(K,g,.55,.4,.7,-.3,.26,0,box);carton(K,g,.55,.3,.7,.3,.26,0,box);
- // indicator column behind the platform
- const cx=.5,cz=-1.0;K.box(.25,.02,.25,P.dark,cx,.01,cz,g);K.cyl(.03,1.0,M.steel,cx,.52,cz,g,'y',14);
+ // indicator column beside the platform at its right rear corner
+ const cx=.92,cz=-.5;K.box(.22,.02,.22,P.dark,cx,.01,cz,g);K.cyl(.03,1.0,M.steel,cx,.52,cz,g,'y',14);
  const hd=H.grp(g,cx,1.05,cz);hd.rotation.x=-.3;K.box(.34,.18,.09,P.light,0,0,0,hd);K.box(.3,.1,.006,P.dark,-.02,.02,.047,hd);disp(K,hd,'0.0 kg',.22,.07,-.04,.02,.052);
  H.keypad(hd,.12,-.05,.047,3,1,.02);K.box(.02,.02,.008,P.led,-.14,-.05,.047,hd);H.logoBand(hd,s,.34,0,-.08,.047,.02);
  K.box(.3,.1,.02,P.dark,cx,.6,cz+.04,g);H.nameplate(g,s,cx,.6,cz+.052,.3,.08);
- H.hose(g,[[cx,.98,cz+.02],[cx,.3,cz+.03],[cx,.05,cz+.1],[cx-.1,.05,cz+.2]],.008,P.black);K.box(.5,.03,.3,P.dark,cx,.015,cz+.06,g);
+ H.hose(g,[[cx,.98,cz+.02],[cx-.03,.3,cz+.03],[cx-.08,.05,cz+.1],[.76,.05,cz+.1]],.008,P.black);K.box(.2,.03,.12,P.dark,.86,.015,cz+.1,g);
  return {group:g,height:1.15};
 });
 
 // === platformScale: TScale 150 kg bench scale ==================================================================
 MB.add('platformScale',(K,s)=>{const {H,P,M,T,g}=setup(K,s,{});
  const ss=K.mat(0xd7dadb,.8,.3),box=K.mat(0xb58a52,0,.85);
- K.box(.5,.05,.4,P.dark,0,.045,0,g);H.feet(g,.5,.4,.02,.06,M.steel);K.box(.14,.04,.12,M.steel,0,.09,0,g);K.box(.46,.02,.36,ss,0,.12,0,g);
- K.box(.04,1.0,.03,ss,0,.57,-.17,g);K.box(.1,.03,.05,ss,0,.085,-.17,g);
- const hd=H.grp(g,0,1.08,-.15);hd.rotation.x=-.35;K.box(.28,.15,.07,K.mat(0xe4e6e3,.2,.5),0,0,0,hd);K.box(.2,.07,.006,P.dark,0,.02,.037,hd);disp(K,hd,'0.000 kg',.18,.055,0,.02,.042,'#2ddc6a','#1a2a1f');
- H.keypad(hd,0,-.045,.037,5,1,.018);H.logoBand(hd,s,.28,0,-.065,.037,.012);K.box(.2,.06,.012,P.dark,0,.5,-.16,g);H.nameplate(g,s,0,.5,-.152,.2,.05);
- H.hose(g,[[0,1.0,-.14],[0,.3,-.13],[0,.1,-.05]],.006,P.black);carton(K,g,.18,.14,.14,.06,.13,.03,box);
+ K.box(.5,.05,.5,P.dark,0,.045,-.05,g);H.feet(g,.5,.4,.02,.06,M.steel);K.box(.14,.04,.12,M.steel,0,.09,0,g);K.box(.46,.02,.36,ss,0,.12,0,g);
+ K.box(.04,1.0,.03,ss,0,.57,-.23,g);K.box(.1,.03,.06,ss,0,.085,-.23,g);
+ const hd=H.grp(g,0,1.08,-.21);hd.rotation.x=-.35;K.box(.28,.15,.07,K.mat(0xe4e6e3,.2,.5),0,0,0,hd);K.box(.2,.07,.006,P.dark,0,.02,.037,hd);disp(K,hd,'0.000 kg',.18,.055,0,.02,.042,'#2ddc6a','#1a2a1f');
+ H.keypad(hd,0,-.045,.037,5,1,.018);H.logoBand(hd,s,.28,0,-.065,.037,.012);K.box(.2,.06,.012,P.dark,0,.5,-.21,g);H.nameplate(g,s,0,.5,-.203,.2,.05);
+ H.hose(g,[[0,1.0,-.25],[0,.3,-.26],[0,.08,-.27]],.006,P.black);carton(K,g,.18,.14,.14,.06,.13,.03,box);
  return {group:g,height:1.16};
 });
 
@@ -172,8 +177,8 @@ MB.add('labelPrinterStation',(K,s)=>{const {H,P,M,T,g,o}=setup(K,s,{count:3});co
  const pm=K.mat(0x3b3e42,.3,.6),pm2=K.mat(0x4a4e53,.3,.55),box=K.mat(0xb58a52,0,.85);
  K.box(1.6,.04,.7,P.light,0,.85,0,g);K.box(1.6,.03,.02,P.dark,0,.85,.345,g);H.legs(g,1.6,.7,.83,.05,P.grey,.04);K.box(1.5,.03,.6,P.grey,0,.25,0,g);
  for(let i=0;i<3;i++)carton(K,g,.35,.25,.4,-.55+i*.42,.265,-.05,box);for(let i=0;i<3;i++)K.cyl(.08,.1,P.white,.55,.315+i*.0,.1-i*.15,g,'y',16);
- K.box(.42,.1,.01,P.dark,-.1,.76,.33,g);H.nameplate(g,s,-.1,.76,.336,.4,.08);H.logoBand(g,s,1.6,0,.825,.351,.03);H.warn(g,.4,.76,.336,0,.08);
- for(let i=0;i<n;i++){const p=H.grp(g,-.62+i*.32,.87,.05);
+ K.box(1.5,.14,.02,P.light,0,.78,.33,g);K.box(1.5,.004,.01,P.dark,0,.72,.336,g);H.nameplate(g,s,-.1,.78,.342,.4,.08);H.logoBand(g,s,1.6,0,.825,.351,.03);H.warn(g,.4,.78,.342,0,.08);
+ for(let i=0;i<n;i++){const p=H.grp(g,-.62+i*.3,.87,.05);
   K.box(.2,.3,.48,pm,-.04,.15,0,p);K.box(.08,.02,.48,pm,.1,.29,0,p);K.box(.08,.02,.48,pm,.1,.01,0,p);K.box(.08,.3,.02,pm,.1,.15,-.23,p);K.box(.08,.3,.02,pm,.1,.15,.23,p);
   K.cyl(.09,.08,P.white,.1,.15,-.04,p,'x',20);K.cyl(.02,.09,P.dark,.1,.15,-.04,p,'x',8);K.box(.006,.26,.44,P.tint,.143,.15,0,p);
   for(const y of[.03,.27])K.box(.01,.02,.46,pm2,.144,y,0,p);for(const z of[-.22,.22])K.box(.01,.26,.02,pm2,.144,.15,z,p);H.handle(p,.15,.2,.0,.06,true,P.dark).rotation.y=PI/2;
@@ -181,21 +186,25 @@ MB.add('labelPrinterStation',(K,s)=>{const {H,P,M,T,g,o}=setup(K,s,{count:3});co
   K.box(.2,.006,.008,P.black,0,.09,.249,p);K.box(.16,.002,.06,P.white,0,.085,.27,p);K.plate(p,'ZEBRA',.1,.03,.08,.26,.249,'#1c1d1f','#ffffff');K.box(.28,.004,.48,pm2,0,.302,0,p);
   H.hose(p,[[0,.05,-.24],[0,.0,-.3],[0,-.02,-.4]],.006,P.black)}
  // monitor on a post, keyboard and the barcode scanner in its stand
- K.box(.2,.02,.15,P.dark,.66,.88,-.15,g);K.box(.04,.35,.04,P.dark,.66,1.04,-.15,g);H.screen(g,.66,1.22,-.12,.34,.22,H.card(s));K.box(.3,.015,.12,P.dark,.6,.878,.2,g);
- K.cyl(.05,.01,P.dark,.72,.875,.25,g,'y',14);K.cyl(.01,.2,P.dark,.72,.975,.25,g,'y',8);K.box(.03,.08,.03,P.black,.72,1.03,.23,g);const gun=K.box(.05,.04,.1,P.black,.72,1.09,.26,g);gun.rotation.x=.4;K.box(.04,.03,.004,P.red,.72,1.1,.31,g).rotation.x=.4;
+ K.box(.2,.02,.15,P.dark,.66,.88,-.15,g);K.box(.04,.35,.04,P.dark,.66,1.04,-.15,g);H.screen(g,.66,1.22,-.12,.34,.22,H.card(s));K.box(.3,.015,.12,P.dark,.58,.878,.18,g);
+ K.cyl(.05,.01,P.dark,.74,.875,.3,g,'y',14);K.cyl(.01,.2,P.dark,.74,.975,.3,g,'y',8);K.box(.03,.08,.03,P.black,.74,1.03,.28,g);const gun=K.box(.05,.04,.1,P.black,.74,1.09,.31,g);gun.rotation.x=.4;K.box(.04,.03,.004,P.red,.74,1.1,.36,g).rotation.x=.4;
  return {group:g,height:1.33};
 });
 
 // === palletTruck: hand pallet trucks in a row (opts.count) =====================================================
 MB.add('palletTruck',(K,s)=>{const {H,P,M,T,g,o}=setup(K,s,{count:3});const n=Math.min(4,Math.max(1,+o.count||1));
  const yel=K.mat(0xd8b52a,.3,.55),blk=P.black,handles=[];
+ // the pump housing is a real wedge: vertical back, flat top over the steer wheels, long slope down to the forks
+ const wedge=(parent,x)=>{const sh=new T.Shape();sh.moveTo(-.35,.12);sh.lineTo(-.35,.5);sh.lineTo(-.16,.5);sh.lineTo(.12,.15);sh.lineTo(.12,.12);sh.closePath();
+  const m=new T.Mesh(K.keep(new T.ExtrudeGeometry(sh,{depth:.52,bevelEnabled:false})),yel);m.rotation.y=-PI/2;m.position.set(x+.26,0,0);m.castShadow=m.receiveShadow=true;parent.add(m);return m};
  for(let i=0;i<n;i++){const t=H.grp(g,(i-(n-1)/2)*.75,0,0);
   for(const sx of[-1,1]){K.box(.16,.06,1.1,yel,sx*.18,.09,.33,t);K.box(.16,.035,.1,yel,sx*.18,.078,.93,t);K.box(.1,.02,.14,blk,sx*.18,.035,.78,t);K.cyl(.035,.07,P.rubber,sx*.18,.035,.78,t,'x',14);K.cyl(.012,.1,M.steel,sx*.18,.035,.78,t,'x',8)}
-  K.box(.52,.24,.2,yel,0,.24,-.25,t);const sl=K.box(.52,.03,.31,yel,0,.24,-.05,t);sl.rotation.x=.876;K.box(.5,.08,.13,yel,0,.16,-.085,t);K.box(.5,.08,.06,yel,0,.24,-.12,t);K.box(.5,.06,.02,yel,0,.31,-.14,t);
-  for(const sx of[-1,1]){K.cyl(.09,.05,P.rubber,sx*.12,.09,-.28,t,'x',18);K.cyl(.03,.06,M.steel,sx*.12,.09,-.28,t,'x',8)}K.cyl(.035,.22,M.steel,.18,.42,-.36,t,'y',10);K.cyl(.045,.06,blk,.18,.55,-.36,t,'y',10);
-  H.warn(t,0,.25,-.148,0,.08).rotation.x=0;K.plate(t,'2.5 t',.12,.04,-.15,.31,-.148,'#1c1b18','#ecebe5');
-  const hg=H.grp(t,0,.3,-.33);hg.rotation.x=-.5;K.cyl(.02,1.0,blk,0,.5,0,hg,'y',10);K.torus(.12,.022,blk,0,1.1,0,hg,'z',24);K.box(.03,.12,.02,P.red,.1,.95,.02,hg);K.box(.06,.1,.06,blk,0,.02,0,hg);handles.push(hg)}
- return {group:g,height:1.2};
+  wedge(t,0);K.box(.5,.02,.18,blk,0,.11,-.25,t);for(const sx of[-1,1]){K.cyl(.09,.05,P.rubber,sx*.12,.09,-.28,t,'x',18);K.cyl(.03,.06,M.steel,sx*.12,.09,-.28,t,'x',8)}
+  // pump cylinder on the housing top carries the handle pivot; release lever on its side
+  K.cyl(.045,.12,M.steel,0,.54,-.27,t,'y',12);K.cyl(.06,.02,blk,0,.6,-.27,t,'y',12);K.box(.04,.03,.02,P.red,.07,.56,-.27,t);
+  H.warn(t,.1,.32,-.351,PI,.09);K.plate(t,'2.5 t',.12,.04,-.1,.32,-.351,'#1c1b18','#ecebe5',PI);H.warn(t,0,.337,-.004,0,.1).rotation.x=-.669;
+  const hg=H.grp(t,0,.6,-.27);hg.rotation.x=-.65;K.box(.06,.08,.06,blk,0,.03,0,hg);K.cyl(.02,.75,blk,0,.42,0,hg,'y',10);K.torus(.12,.022,blk,0,.82,0,hg,'z',24);K.box(.03,.12,.02,P.red,.1,.68,.02,hg);handles.push(hg)}
+ return {group:g,height:1.37};
 });
 
 // === reachStacker: Jungheinrich EKX 514 man-up VNA truck (length along z, forks to +z) =========================
@@ -209,9 +218,9 @@ MB.add('reachStacker',(K,s)=>{const {H,P,M,T,g}=setup(K,s,{});
  K.box(.2,.12,.08,P.dark,-.5,.95,-.1,g);K.box(.04,.04,.03,P.red,-.5,.95,-.05,g);
  // two-section mast with lift cylinder and chains
  for(const sx of[-1,1])K.box(.14,3.2,.3,mastM,sx*.55,1.75,0,g);for(const y of[.5,3.3])K.box(1.24,.12,.3,mastM,0,y,0,g);
- for(const sx of[-1,1])K.box(.1,3.1,.14,M.steel,sx*.4,1.9,.08,g);K.box(.9,.1,.14,M.steel,0,3.5,.08,g);K.cyl(.06,2.4,dk,0,1.35,-.05,g,'y',14);for(const sx of[-1,1])K.box(.02,2.6,.01,P.black,sx*.2,1.8,.16,g);
+ for(const sx of[-1,1])K.box(.1,3.1,.14,M.steel,sx*.4,1.9,.08,g);K.box(.9,.1,.14,M.steel,0,3.5,.08,g);K.cyl(.06,2.4,dk,0,1.35,-.05,g,'y',14);for(const sx of[-1,1])K.box(.02,2.6,.01,P.black,sx*.2,1.9,-.05,g);
  // man-up cab with overhead guard, seat, console and the swivel fork carriage in front
- const cab=H.grp(g,0,1.1,.2);K.box(1.1,.9,.1,dk,0,.5,-.02,cab);for(const sx of[-1,1])for(const y of[.1,.9])K.cyl(.05,.06,M.steel,sx*.47,y,-.04,cab,'x',12);K.box(1.3,.08,1.0,dk,0,0,.5,cab);K.box(1.3,1.0,.06,yel,0,.5,.97,cab);K.box(1.3,.9,.06,dk,0,.5,.03,cab);hazard(K,cab,1.3,.1,0,.1,1.002);
+ const cab=H.grp(g,0,1.1,.2);K.box(.94,.9,.1,dk,0,.5,-.02,cab);for(const sx of[-1,1])for(const y of[.1,.9])K.cyl(.05,.06,M.steel,sx*.47,y,-.04,cab,'x',12);K.box(1.3,.08,1.0,dk,0,0,.5,cab);K.box(1.3,1.0,.06,yel,0,.5,.97,cab);K.box(1.3,.9,.06,dk,0,.5,.03,cab);hazard(K,cab,1.3,.1,0,.1,1.002);
  for(const sx of[-1,1]){K.box(.06,.9,.9,yel,sx*.62,.5,.5,cab);K.box(.05,1.1,.05,dk,sx*.6,1.5,.08,cab);K.box(.05,1.1,.05,dk,sx*.6,1.5,.92,cab);K.box(.012,.9,.8,P.glass,sx*.62,1.5,.5,cab).castShadow=false}
  K.box(1.3,.06,.95,dk,0,2.03,.5,cab);mesh(K,cab,1.2,.85,0,2.0,.5,0,-PI/2);K.box(1.2,.8,.012,P.glass,0,1.45,.95,cab).castShadow=false;K.cyl(.06,.12,beacon,.5,2.12,.3,cab,'y',14);
  K.box(.4,.3,.4,dk,-.2,.17,.4,cab);K.box(.5,.1,.45,P.black,-.2,.37,.4,cab);K.box(.5,.5,.08,P.black,-.2,.65,.2,cab);K.box(.5,.3,.3,dk,.25,.9,.75,cab);H.screen(cab,.25,1.12,.9,.14,.1,null);K.torus(.12,.015,P.black,.25,1.2,.6,cab,'z',24);H.estop(cab,.45,1.0,.91);
@@ -232,7 +241,7 @@ MB.add('yardTractor',(K,s)=>{const {H,P,M,T,g}=setup(K,s,{});
  for(const z of[-1.4,1.5]){K.box(.03,.03,.3,blk,-2.95,2.3,z-(z>0?.1:-.1),g);K.box(.15,.3,.04,blk,-2.95,2.3,z,g)}K.box(.5,.04,.25,M.grating,-2.2,.55,1.35,g);K.box(.5,.04,.25,M.grating,-2.2,.95,1.3,g);for(const sx of[-1,1])K.box(.04,.5,.12,blk,-2.2+sx*.23,.75,1.31,g);
  // hood (right side) with grille, nameplate and brand band, the exhaust stack and the rear post with a work lamp
  K.box(1.4,.7,1.3,red,-2.2,1.75,-.6,g);H.grille(g,.9,.4,-2.906,1.7,-.6,-PI/2);H.nameplate(g,s,-2.906,2.0,-.6,.6,.12,-PI/2);const hs=H.grp(g,-2.2,0,-1.256,PI);H.logoBand(hs,s,1.3,0,1.5,0,.05);K.plate(hs,'KALMAR',.6,.1,0,1.7,0,'#ffffff','#b9233a');H.nameplate(hs,s,.0,1.92,0,.6,.12);const cs=H.grp(g,-2.2,0,1.256);K.plate(cs,'KALMAR',.5,.08,-.35,2.62,0,'#ffffff','#b9233a');H.logoBand(cs,s,1.4,0,1.48,0,.05);
- K.cyl(.05,1.1,M.steel,-1.3,2.1,-.9,g,'y',12);K.cyl(.06,.1,M.dark,-1.3,2.7,-.9,g,'y',12);K.box(.15,1.45,.15,blk,-1.3,2.125,.5,g);K.box(.12,.1,.08,blk,-1.3,2.75,.6,g);K.box(.08,.06,.006,lamp,-1.3,2.75,.645,g);
+ K.box(.16,.06,.16,blk,-1.3,1.43,-.9,g);K.cyl(.05,1.2,M.steel,-1.3,2.0,-.9,g,'y',12);K.cyl(.06,.1,M.dark,-1.3,2.63,-.9,g,'y',12);K.box(.15,1.45,.15,blk,-1.3,2.125,.5,g);K.box(.12,.1,.08,blk,-1.3,2.75,.6,g);K.box(.08,.06,.006,lamp,-1.3,2.75,.645,g);
  // front bumper with hazard stripes and headlights; rear deck with the fifth wheel on its lift frame; rear bumper
  K.box(.25,.4,2.5,blk,-3.0,.9,0,g);for(const sz of[-1,1]){hazard(K,g,.8,.3,-3.126,.9,sz*.85,-PI/2);K.cyl(.08,.03,lamp,-3.13,1.0,sz*.5,g,'x',14)}
  K.box(1.1,.2,1.0,blk,.9,1.11,0,g);K.cyl(.55,.08,K.mat(0x4b4f53,.6,.4),.9,1.25,0,g,'y',32);K.box(.55,.09,.14,P.black,1.2,1.25,0,g);for(const sz of[-1,1])K.cyl(.05,.5,M.steel,.4,1.1,sz*.4,g,'x',10);

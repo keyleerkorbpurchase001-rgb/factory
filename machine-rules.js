@@ -18,7 +18,7 @@ MR.STATION=[
  R(/ftir|infrared spectro|spectrophotometer/i,'ftir','mb'),R(/\bups\b|backup power|servers|firewall|^it$/i,'cabinet','fl'),R(/monitors|displays|lockers/i,'rack','fl'),R(/\bcmm\b|coordinate measuring|zeiss (contura|prismo)/i,'cmm','mb'),
  R(/^(pcb|magazine) loading|magazine load(er)?$/i,'loader','plant'),R(/dual multi loader|KDLSVL/i,'magazineLoader','mb',{dual:true}),
  R(/pcb unloading|magazine unload|KFU-|KDUSVP|unloaders?\b/i,'magazineUnloader','mb'),
- R(/paste print|screen print|printing/i,'printer','plant'),R(/paste insp|\bspi\b/i,'spi','plant'),R(/optical insp|\baoi\b|x-?ray/i,'aoi','plant'),
+ R(/document print|line matrix|office print/i,'cabinet','fl'),R(/paste print|screen print|stencil print|solder paste printing/i,'printer','plant'),R(/paste insp|\bspi\b/i,'spi','plant'),R(/optical insp|\baoi\b|x-?ray/i,'aoi','plant'),
  R(/pick ?& ?place|placement|mounter/i,'pnp','plant'),R(/reflow/i,'reflow','plant'),R(/laser mark/i,'marker','plant'),R(/clean/i,'cleaner','plant'),
  R(/ng sort|good ?\/ ?ng|sorting/i,'ngSorter','mb'),R(/board flip|\bflip/i,'boardFlipper','mb'),
  R(/weight measurement buffer/i,'pcbBuffer','mb',{weigh:true}),R(/pcb buffer|ng buffer|belt buffer|buffer conveyor|\bbuffers?\b/i,'pcbBuffer','mb'),
