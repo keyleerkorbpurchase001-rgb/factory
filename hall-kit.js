@@ -131,8 +131,11 @@ K.dress=function(){if(K.dressed||typeof RL==='undefined'||!RL.bounds)return;K.dr
  K.sides=sides;K.walls={x0:b.minX+.6,x1:b.maxX-.6,z0:b.minZ+.6};
  try{K.models()}catch(e){console.warn('hall-kit models',e)}
  try{K.detail()}catch(e){console.warn('hall-kit detail',e)}
- // the camera stays inside the walls that were built
- if(typeof animated!=='undefined')animated.push(()=>{const p=camera.position;if(sides.left&&p.x<K.walls.x0)p.x=K.walls.x0;if(sides.right&&p.x>K.walls.x1)p.x=K.walls.x1;if(sides.back&&p.z<K.walls.z0)p.z=K.walls.z0;if(p.y<.4)p.y=.4})};
+ // the camera does not pass through the walls that were built: below the wall top it stays inside them; above it
+ // the camera looks over the walls, so the mouse wheel / pinch can zoom out freely to the whole hall
+ K.walls.top=H;
+ if(typeof animated!=='undefined')animated.push(()=>{const p=camera.position;if(p.y<.4)p.y=.4;if(p.y>=K.walls.top-.2)return;
+  if(sides.left&&p.x<K.walls.x0)p.x=K.walls.x0;if(sides.right&&p.x>K.walls.x1)p.x=K.walls.x1;if(sides.back&&p.z<K.walls.z0)p.z=K.walls.z0})};
 
 // ---------- the factory-line machine models ----------
 // Every placed machine whose kind the factory-line library models (SMT loader, printer, SPI, pick-and-place, reflow,

@@ -3,7 +3,7 @@
 and hall-kit.js; size the renderer to its container instead of the window; call HK.dress() after the hall is dressed
 and HK.ui() once the scene is ready; restyle the line signs and machine labels to the kit's dark labels.
 Every replacement must match exactly once per page, or the script stops without writing."""
-TAGS='<script src="hall-data.js"></script>\n<script src="fl-models.js"></script>\n<script src="machines/common.js"></script>\n<script src="machines/handling.js"></script>\n<script src="machines/logistics.js"></script>\n<script src="machines/metal.js"></script>\n<script src="machines/lab.js"></script>\n<script src="machines/dress.js"></script>\n<script src="machines/extra.js"></script>\n<script src="machine-rules.js"></script>\n<script src="hall-kit.js"></script>'
+TAGS='<script src="hall-data.js"></script>\n<script src="fl-models.js"></script>\n<script src="machines/common.js"></script>\n<script src="machines/handling.js"></script>\n<script src="machines/logistics.js"></script>\n<script src="machines/metal.js"></script>\n<script src="machines/lab.js"></script>\n<script src="machines/dress.js"></script>\n<script src="machines/extra.js"></script>\n<script src="machines/robots.js"></script>\n<script src="machines/takeout.js"></script>\n<script src="machine-rules.js"></script>\n<script src="hall-kit.js"></script>'
 import re, os, sys
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 pages = sorted(f for f in os.listdir(root) if f.endswith('.html') and f != 'index.html')

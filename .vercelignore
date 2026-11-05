@@ -3,3 +3,5 @@ tools/*.py
 tools/*.mjs
 machines/KINDS.md
 .gitignore
+# React rebuild in progress: not part of the live static site yet
+react/

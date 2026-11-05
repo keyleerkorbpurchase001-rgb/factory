@@ -55,6 +55,17 @@ function lib(K){
   [[P.green,.045],[P.red,0],[P.yellow,-.045]].forEach(([m,yy])=>{K.cyl(.013,.01,M.dark,0,yy,.022,g,'z',12);K.cyl(.009,.012,m,0,yy,.028,g,'z',12)});return g};
  // Window with a dark frame and tinted pane on a face at +z.
  L.win=(parent,w,h,x,y,z,clear=false)=>{K.box(w+.04,h+.04,.006,P.dark,x,y,z+.003,parent);const p=K.box(w,h,.006,clear?P.glass:P.tint,x,y,z+.01,parent);p.castShadow=false;return p};
+ // Sheet-metal panel w×h (centre x,y; face at +z of a group turned by ry) with real window cut-outs: wins=[{x,y,w,h}] in
+ // panel coordinates, all windows in one row (same y, same h). The panel is built in pieces round the holes, each hole
+ // gets a thin dark frame and a clear pane, so what is behind it stays visible.
+ L.cutPanel=(parent,w,h,x,y,z,ry,wins,material=cream,th=.012)=>{const g=H.grp(parent,x,y,z,ry);if(!wins.length){K.box(w,h,th,material,0,0,0,g);return g}
+  const ws=[...wins].sort((a,b)=>a.x-b.x),wy=ws[0].y,wh=ws[0].h,yb=wy-wh/2,yt=wy+wh/2;
+  if(yb>-h/2+.001)K.box(w,yb+h/2,th,material,0,(yb-h/2)/2,0,g);if(yt<h/2-.001)K.box(w,h/2-yt,th,material,0,(yt+h/2)/2,0,g);
+  let xe=-w/2;for(const o of ws){const xl=o.x-o.w/2;if(xl>xe+.001)K.box(xl-xe,wh,th,material,(xl+xe)/2,wy,0,g);xe=o.x+o.w/2}if(xe<w/2-.001)K.box(w/2-xe,wh,th,material,(w/2+xe)/2,wy,0,g);
+  for(const o of ws){for(const sy of[-1,1])K.box(o.w+.03,.015,th+.008,P.dark,o.x,o.y+sy*(o.h/2+.0075),0,g);for(const sx of[-1,1])K.box(.015,o.h,th+.008,P.dark,o.x+sx*(o.w/2+.0075),o.y,0,g);
+   K.box(o.w,o.h,.004,P.glass,o.x,o.y,0,g).castShadow=false}return g};
+ // Interior light strip under a roof (emissive, so the inside of a cabinet reads through its windows).
+ L.lightStrip=(parent,len,x,y,z)=>K.box(len,.01,.04,K.mat(0xf4f1e6,0,.5,{emissive:0xfff6dc,emissiveIntensity:.9}),x,y,z,parent).castShadow=false;
  // Lamp tower; lamps collected in arr.
  L.lamp=(parent,x,y,z,arr)=>{const r=H.lampTower(parent,x,y,z,'g');arr.push(...r.lamps);return r.group};
  // Two edge-belt rails along x (fixed back rail, adjustable front rail with lead screws and a hand wheel), belt top at y.
@@ -84,40 +95,71 @@ function lib(K){
 
 // ───────────────────────────── pcbConveyor ─────────────────────────────
 MB.add('pcbConveyor',(K,s)=>{
- const L=lib(K),{H,P,M,T}=L,g=new T.Group(),type=(s.opts&&s.opts.type)||'connect',lamps=[];
- const w={connect:.6,gateway:1.0,shuttle:1.5,dual:1.1}[type]||.6,d=.9,cd=.8,hc=.6,hb=.9;
- // Lower ivory cabinet with door(s), MAIN POWER and the maker plate.
- const c=L.cab(g,w,hc,cd,0,0),zf=c.userData.zf;
- if(type==='shuttle'){for(const sx of[-1,1])L.door(c,.56,.42,sx*.36,.33,zf,sx);L.mainPower(c,.0,.4,zf+.02);L.sightBox(c,0,.18,zf+.01)}
- else{L.door(c,w-.24,.42,-.06,.33,zf,1);L.mainPower(c,w/2-.08,.42,zf+.02);L.sightBox(c,w/2-.08,.2,zf+.01)}
- H.logoBand(c,s,w-.1,0,hc-.045,zf+.01,.035);H.nameplate(c,s,-w/2+.2,.12,zf+.02,.3,.07);L.lot(c,s,w/2-.12,hc-.05,zf+.02);
- // Aluminium profile frame above the cabinet, with the flat top cover over the back half and the drive.
- for(const sx of[-1,1])for(const sz of[-1,1])K.box(.04,hb-hc-.07,.04,P.alu,sx*(w/2-.05),hc+(hb-hc-.07)/2,sz*(cd/2-.05),g);
- for(const sz of[-1,1])K.box(w-.06,.04,.04,P.alu,0,hb-.09,sz*(cd/2-.05),g);for(const sx of[-1,1])K.box(.04,.04,cd-.06,P.alu,sx*(w/2-.05),hb-.09,0,g);
- K.box(w-.14,.012,cd*.42,L.cream,0,hb-.064,-cd*.27,g);K.box(w-.14,.012,.1,L.cream,0,hb-.064,cd/2-.1,g);
- L.motor(g,w*.1,hb-.17,-.02,.035,.11);K.box(.08,.06,.08,M.dark,-w*.2,hb-.17,-.02,g);H.hose(g,[[w*.1,hb-.2,-.06],[w*.1,hc+.05,-.2],[w*.1,hc-.01,-.2]],.008);
- // Rails (one lane, or two for the dual conveyor) and the lifting gate / shuttle carriage.
- const lanes=type==='dual'?[-.2,.2]:[0.02],lw=type==='dual'?.3:.4,parts=[],movers=[];
- const gate=new T.Group();g.add(gate);const carriage=new T.Group();g.add(carriage);
- for(const z of lanes){
-  if(type==='gateway'){const a=L.rails(g,.3,-w/2+.17,hb,z,lw,{lead:false});const b=L.rails(g,.3,w/2-.17,hb,z,lw);parts.push(a,b);
-   gate.position.set(.19,hb,z);const sec=L.rails(gate,.36,-.19,0,0,lw,{lead:false,sensor:false,pcb:false});K.cyl(.012,lw+.06,M.steel,0,-.03,0,gate,'z',8);
-   K.cyl(.008,.3,M.steel,-.2,hb-.16,lw/2+.04,g,'y',8);K.cyl(.014,.14,M.dark,-.2,hb-.3,lw/2+.04,g,'y',10)}
-  else parts.push(L.rails(g,w-.1,0,hb,z,lw));
+ const L=lib(K),{H,P,M,T}=L,g=new T.Group(),type=(s.opts&&s.opts.type)||'connect',lamps=[],parts=[];
+ const cd=.8,hb=.9,gate=new T.Group(),carriage=new T.Group(),strut=new T.Group();let height=hb+.02,gl=.42,gx0=0,ax=0,ay=0;
+ if(type==='gateway'){
+  // KGC gateway: a tall closed ivory cabinet (lower door, board slot, two upper doors) beside the gate opening where the hinged
+  // rail section lifts on a gas strut; light-curtain posts guard the opening and a yellow/black step plate lies in front of it.
+  const cw=.64,cx=-.2,ch=1.3,c=L.cab(g,cw,ch,cd,cx,0),zf=c.userData.zf,px=cx+cw/2;
+  L.door(c,cw-.16,.5,0,.42,zf,1);K.box(cw-.06,.012,.004,P.dark,0,.73,zf+.004,c);K.box(cw-.06,.012,.004,P.dark,0,.96,zf+.004,c);
+  for(const sx of[-1,1])L.door(c,(cw-.2)/2,.26,sx*(cw-.2)/4,1.12,zf,sx);
+  K.box(.3,.045,.004,P.screenBack,-.04,hb,zf+.004,c);K.box(.3,.004,.012,P.belt,-.04,hb-.02,zf+.006,c);
+  L.mainPower(c,cw/2-.09,.84,zf+.02);H.nameplate(c,s,-.1,.84,zf+.02,.3,.07);L.lot(c,s,cw/2-.09,ch-.06,zf+.02);K.plate(c,'CE',.05,.05,cw/2-.08,.14,zf+.02,'#ecebe5','#1c1b18');
+  H.logoBand(c,s,cw-.1,0,ch-.04,zf+.01,.03);H.warn(c,-cw/2+.1,ch-.1,zf+.02,0,.07);
+  // hinge blocks on the cabinet side wall, the hinge pin, and the hinged section: rail pair, ivory tray and end lip.
+  gx0=px+.025;gate.position.set(gx0,hb-.05,0);g.add(gate);
+  for(const sz of[-1,1])K.box(.05,.1,.06,M.dark,px+.015,hb-.05,sz*.22,g);K.cyl(.015,.52,M.steel,gx0,hb-.05,0,g,'z',10);
+  const r=L.rails(gate,gl,gl/2+.02,.05,0,.4,{lead:false,sensor:false});parts.push(r);
+  K.box(gl+.02,.03,.52,L.cream,gl/2+.02,-.03,0,gate);for(const sz of[-1,1])K.box(gl+.02,.07,.012,L.cream,gl/2+.02,-.005,sz*.26,gate);K.box(.05,.1,.52,L.cream,gl+.045,0,0,gate);
+  K.box(.04,.03,.44,P.alu,gl/2+.02,-.06,0,gate);K.box(.03,.04,.03,M.black,gl*.3,.06,-.23,gate);
+  // gas strut: anchored on the cabinet side wall, its length and angle follow the section in update().
+  ax=px+.0;ay=hb-.42;K.box(.03,.06,.05,M.dark,px+.005,ay,-.2,g);strut.position.set(ax,ay,-.2);g.add(strut);
+  K.cyl(.013,.5,M.dark,0,.25,0,strut,'y',10);K.cyl(.007,1,M.steel,0,.5,0,strut,'y',8);K.sphere(.016,M.dark,0,1,0,strut,8);
+  // light-curtain pair across the opening, the chequer step plate with its hazard stripe, and the sensor cable.
+  L.lcPost(g,px+.04,cd/2+.07,1.1,Math.PI/2);L.lcPost(g,px+.54,cd/2+.07,1.1,-Math.PI/2);
+  const plate=K.mat(0xd9d4c3,.35,.55);K.box(.5,.08,.4,plate,px+.29,.04,cd/2+.3,g);K.box(.5,.006,.4,P.light,px+.29,.083,cd/2+.3,g);
+  K.box(.5,.014,.07,P.yellow,px+.29,.083,cd/2+.465,g);for(let i=0;i<4;i++)K.box(.06,.004,.07,M.black,px+.085+i*.136,.092,cd/2+.465,g);
+  K.box(.5,.07,.004,P.yellow,px+.29,.045,cd/2+.502,g);for(let i=0;i<4;i++)K.box(.06,.07,.004,M.black,px+.085+i*.136,.045,cd/2+.505,g);
+  H.hose(g,[[px+.54,.1,cd/2+.07],[px+.45,.08,cd/2+.2],[px+.2,.09,cd/2+.25],[px+.01,.12,cd/2+.1]],.006,P.cableB);
+  height=ch;
+ }else if(type==='shuttle'){
+  // KSC shuttle: a long low ivory cabinet whose top deck has a recessed trough with the rails and the lifting carriage.
+  const w=1.5,hc=.82,c=L.cab(g,w,hc,cd,0,0),zf=c.userData.zf;
+  for(const sx of[-1,1])L.door(c,.6,.5,sx*.38,.36,zf,sx);K.box(.012,.64,.004,P.dark,0,.4,zf+.004,c);
+  L.mainPower(c,-.68,.7,zf+.02);H.nameplate(c,s,-.3,.7,zf+.02,.3,.07);L.lot(c,s,.68,.7,zf+.02);L.sightBox(c,.68,.2,zf+.01);H.logoBand(c,s,.5,.2,.7,zf+.01,.03);
+  const deck=K.mat(0xe9e3d0,.08,.55);for(const sz of[-1,1])K.box(w-.06,.05,.12,deck,0,hc+.025,sz*.31,g);for(const sx of[-1,1])K.box(.06,.05,.5,deck,sx*(w/2-.06),hc+.025,0,g);
+  K.box(w-.18,.012,.5,P.screenBack,0,hc+.006,0,g);for(let i=0;i<3;i++)for(const sz of[-1,1])K.box(.3,.004,.07,P.screenBack,-.5+i*.5,hc+.052,sz*.31,g);
+  for(const sx of[-1,1]){K.box(.04,.12,.04,P.alu,sx*.5,hc+.072,-.2,g);K.cyl(.008,.12,M.steel,sx*.5,hc+.072,-.14,g,'y',8)}
+  L.motor(g,0,hc+.075,-.31,.025,.1,Math.PI/2);K.box(.06,.05,.06,M.dark,-.3,hc+.075,-.31,g);
+  carriage.position.set(0,hb-.06,0);g.add(carriage);for(const sx of[-1,1])K.box(.06,.06,.07,M.dark,sx*.5,.0,-.17,carriage);K.box(1.06,.03,.05,P.alu,0,-.02,-.17,carriage);
+  parts.push(L.rails(carriage,1.1,0,.06,.02,.4,{lead:false}));
+  L.btnBox(g,w/2-.14,hc-.11,zf+.02);H.estop(g,-w/2+.14,hc-.11,zf+.006);H.warn(g,-w/2+.26,hc-.11,zf+.004,0,.06);
+  height=hb+.06;
+ }else{
+  // Connection / dual conveyor: ivory cabinet, aluminium profile frame with the top covers and the drive, rails on top.
+  const w=type==='dual'?1.1:.6,hc=.6,c=L.cab(g,w,hc,cd,0,0),zf=c.userData.zf;
+  L.door(c,w-.24,.42,-.06,.33,zf,1);L.mainPower(c,w/2-.08,.42,zf+.02);L.sightBox(c,w/2-.08,.2,zf+.01);
+  H.logoBand(c,s,w-.1,0,hc-.045,zf+.01,.035);H.nameplate(c,s,-w/2+.2,.12,zf+.02,.3,.07);L.lot(c,s,w/2-.12,hc-.05,zf+.02);H.warn(c,-w/2+.12,hc-.14,zf+.02,0,.06);
+  for(const sx of[-1,1])for(const sz of[-1,1])K.box(.04,hb-hc-.07,.04,P.alu,sx*(w/2-.05),hc+(hb-hc-.07)/2,sz*(cd/2-.05),g);
+  for(const sz of[-1,1])K.box(w-.06,.04,.04,P.alu,0,hb-.09,sz*(cd/2-.05),g);for(const sx of[-1,1])K.box(.04,.04,cd-.06,P.alu,sx*(w/2-.05),hb-.09,0,g);
+  K.box(w-.14,.012,cd*.42,L.cream,0,hb-.064,-cd*.27,g);K.box(w-.14,.012,.1,L.cream,0,hb-.064,cd/2-.1,g);
+  L.motor(g,w*.1,hb-.17,-.02,.035,.11);K.box(.08,.06,.08,M.dark,-w*.2,hb-.17,-.02,g);H.hose(g,[[w*.1,hb-.2,-.06],[w*.1,hc+.05,-.2],[w*.1,hc-.01,-.2]],.008);
+  const lanes=type==='dual'?[-.2,.2]:[0.02],lw=type==='dual'?.3:.4;for(const z of lanes)parts.push(L.rails(g,w-.1,0,hb,z,lw));
+  // Control box and e-stop on bracket plates screwed to the front posts; sensor cable; lamp tower on the dual conveyor.
+  const zp=cd/2-.03;K.box(.13,.2,.012,L.creamD,w/2-.1,hb-.15,zp+.006,g);L.btnBox(g,w/2-.1,hb-.15,zp+.012+.02);
+  K.box(.1,.12,.012,L.creamD,-w/2+.1,hb-.13,zp+.006,g);H.estop(g,-w/2+.1,hb-.13,zp+.012+.006);
+  H.hose(g,[[w*.2-.2,hb+.01,-lw/2-.03-.15*(type==='dual'?1:0)],[w*.2-.2,hb-.1,-cd/2-.02],[w*.2-.2,hc+.02,-cd/2-.02]],.005,P.cableB);
+  if(type==='dual')L.lamp(g,-w/2+.1,hc-.1,-cd/2+.1,lamps);
+  height=type==='dual'?hc+.52:hb+.02;
  }
- if(type==='gateway'){for(const sx of[-1,1])L.lcPost(g,sx*(w/2-.02),cd/2+.05,1.05);K.box(.35,.02,.2,K.mat(0xd8d2bd,.3,.6),0,.01,cd/2+.12,g);K.box(.35,.012,.03,P.yellow,0,.026,cd/2+.21,g)}
- if(type==='shuttle'){for(const sx of[-1,1]){K.box(.04,.36,.04,P.alu,sx*.5,hb+.1,-cd/2+.1,g);K.cyl(.008,.32,M.steel,sx*.5,hb+.1,-cd/2+.16,g,'y',8)}
-  K.box(1.1,.04,.04,P.alu,0,hb+.26,-cd/2+.1,g);L.motor(g,.0,hb+.26,-cd/2+.1,.03,.1,Math.PI/2);
-  carriage.position.set(0,hb+.06,0);K.box(1.06,.03,.05,P.alu,0,.0,-cd/2+.16,carriage);for(const sx of[-1,1])K.box(.05,.05,.3,P.alu,sx*.5,.0,-cd/2+.3,carriage);
-  parts.push(L.rails(carriage,1.1,0,.06,.02,lw,{lead:false}))}
- // Side control box (3 buttons), e-stop, sensor cable and the lamp tower.
- L.btnBox(g,w/2-.1,hb-.15,cd/2+.02);H.estop(g,-w/2+.1,hb-.12,cd/2+.004);H.warn(g,-w/2+.1,hb-.25,cd/2+.004,0,.08);
- H.hose(g,[[w*.2-.2,hb+.01,-lw/2-.03-.15*(type==='dual'?1:0)],[w*.2-.2,hb-.1,-cd/2-.02],[w*.2-.2,hc+.02,-cd/2-.02]],.005,P.cableB);
- if(type!=='connect')L.lamp(g,-w/2+.1,hc-.1,-cd/2+.1,lamps);
- const height=type==='shuttle'?hb+.28:type==='connect'?hb+.02:hc+.52;
- return {group:g,height,lamps,update:(t,run)=>{if(run===false)return;for(const p of parts)if(p.pcb)p.pcb.position.x=((t*.25+p.len)%(p.len-.3))-(p.len-.3)/2;
-  if(type==='gateway'){const ph=(t*.5)%4;gate.rotation.z=-(ph<1?ph:ph<2?1:ph<3?3-ph:0)*.55}
-  if(type==='shuttle')carriage.position.y=hb+.06+.08*(.5+.5*Math.sin(t*.9))}};
+ const ease=u=>(1-Math.cos(Math.min(1,Math.max(0,u))*Math.PI))/2;
+ const poseStrut=()=>{const lx=gl*.62,ly=-.06,cs=Math.cos(gate.rotation.z),sn=Math.sin(gate.rotation.z),dx=gx0+lx*cs-ly*sn-ax,dy=(hb-.05)+lx*sn+ly*cs-ay;strut.rotation.z=Math.atan2(-dx,dy);strut.scale.y=Math.hypot(dx,dy)};
+ if(type==='gateway')poseStrut();
+ const root=new T.Group();root.add(g);g.updateMatrixWorld(true);{const bb=new T.Box3().setFromObject(g);g.position.x=-(bb.min.x+bb.max.x)/2;g.position.z=-(bb.min.z+bb.max.z)/2}
+ return {group:root,height,lamps,update:(t,run)=>{if(run===false)return;
+  let open=0;if(type==='gateway'){const ph=(t*.4)%4;open=ph<1?ease(ph):ph<2?1:ph<3?1-ease(ph-2):0;gate.rotation.z=open*1.05;poseStrut()}
+  if(open<.01)for(const p of parts){const tr=p.len-.3;if(p.pcb&&tr>.05)p.pcb.position.x=((t*.25)%tr)-tr/2}
+  if(type==='shuttle')carriage.position.y=hb-.06+.05*(.5+.5*Math.sin(t*.9))}};
 });
 
 // ───────────────────────── magazine loader / unloader ─────────────────────────
@@ -129,8 +171,10 @@ function magazineMachine(K,s,unload){
  H.nameplate(mc,s,0,.16,zf+.02,.34,.08);L.lot(mc,s,X(-mw/2+.1),hc-.07,zf+.02);
  const uh=.8;for(const sx of[-1,1])for(const sz of[-1,1])K.box(.04,uh,.04,P.alu,mx+sx*(mw/2-.02),hc+uh/2,sz*(D/2-.02),g);
  for(const sz of[-1,1])K.box(mw-.04,.04,.04,P.alu,mx,hc+uh-.02,sz*(D/2-.02),g);for(const sx of[-1,1])K.box(.04,.04,D-.04,P.alu,mx+sx*(mw/2-.02),hc+uh-.02,0,g);
- K.box(mw-.06,uh-.06,.012,L.cream,mx,hc+uh/2,D/2-.03,g);K.box(mw-.06,uh-.06,.012,L.cream,mx,hc+uh/2,-D/2+.03,g);K.box(.012,uh-.06,D-.06,L.cream,mx+X(-mw/2+.03),hc+uh/2,0,g);K.box(mw-.06,.012,D-.06,L.cream,mx,hc+uh-.046,0,g);
- L.win(g,.2,.3,mx-.14,hc+.42,D/2-.024,true);L.win(g,.2,.3,mx+.14,hc+.42,D/2-.024,true);K.box(.012,.3,.3,P.dark,mx+X(-mw/2+.034),hc+.4,0,g);K.box(.004,.26,.26,P.glass,mx+X(-mw/2+.023),hc+.4,0,g).castShadow=false;
+ // Front and outer side panels have real window cut-outs (clear panes), so the magazine elevator inside is seen; light strip under the roof.
+ L.cutPanel(g,mw-.06,uh-.06,mx,hc+uh/2,D/2-.03,0,[{x:-.14,y:.42-uh/2,w:.2,h:.3},{x:.14,y:.42-uh/2,w:.2,h:.3}]);K.box(mw-.06,uh-.06,.012,L.cream,mx,hc+uh/2,-D/2+.03,g);
+ L.cutPanel(g,D-.06,uh-.06,mx+X(-mw/2+.03),hc+uh/2,0,dir>0?-Math.PI/2:Math.PI/2,[{x:0,y:.4-uh/2,w:.3,h:.3}]);K.box(mw-.06,.012,D-.06,L.cream,mx,hc+uh-.046,0,g);
+ L.lightStrip(g,mw-.2,mx,hc+uh-.06,.12);K.box(mw-.1,uh-.12,.004,P.light,mx,hc+uh/2,-D/2+.04,g);
  for(const sx of[-1,1])H.warn(g,mx+sx*.14,hc+uh-.11,D/2-.016,0,.07);
  // Magazine elevator inside: guide rods, lead screw, the elevator plate and the loaded magazine(s).
  const elev=new T.Group();g.add(elev);const mags=dual?[-.16,.16]:[0];
@@ -154,26 +198,37 @@ MB.add('magazineUnloader',(K,s)=>magazineMachine(K,s,true));
 
 // ───────────────────────────── ngSorter ─────────────────────────────
 MB.add('ngSorter',(K,s)=>{
- const L=lib(K),{H,P,M,T}=L,g=new T.Group(),lamps=[],hb=.9,hc=.75,W=1.0,D=1.0;
+ const L=lib(K),{H,P,M,T}=L,g=new T.Group(),lamps=[],hb=.9,hc=.75,W=1.0,D=1.0,uh=.72;
  // Lower cabinet with two doors, MAIN POWER and the filter window.
  const c=L.cab(g,W,hc,D,0,0),zf=c.userData.zf;L.door(c,.5,.56,.2,.4,zf,1);L.door(c,.26,.56,-.3,.4,zf,-1);L.mainPower(c,-.3,.6,zf+.02);L.sightBox(c,-.3,.2,zf+.01);
  H.nameplate(c,s,.2,.16,zf+.02,.34,.08);L.lot(c,s,.42,hc-.07,zf+.02);
- // Control column (left) with the console, lamp tower.
- const cx=-.33,cw=.32;K.box(cw,.75,.36,L.cream,cx,hc+.375,.17,g);for(const sx of[-1,1])for(const sz of[-1,1])K.box(.042,.76,.042,L.trim,cx+sx*(cw/2-.015),hc+.375,.17+sz*.165,g);
- L.door(g,.22,.3,cx,hc+.5,.35,-1);L.console(g,s,cx,1.0,.37,.3);K.box(cw,.06,.1,L.cream,cx,.93,.37,g);K.box(.06,.04,.1,M.dark,cx,1.08,-.04,g);L.lamp(g,cx,1.1,-.08,lamps);
- // Upper housing (right) with windows: inside the lift column and the two output lanes.
- const ux=.17,uw=.64,uh=.72;for(const sx of[-1,1])for(const sz of[-1,1])K.box(.04,uh,.04,P.alu,ux+sx*(uw/2-.02),hc+uh/2,sz*(D/2-.02),g);
- for(const sz of[-1,1])K.box(uw-.04,.04,.04,P.alu,ux,hc+uh-.02,sz*(D/2-.02),g);for(const sx of[-1,1])K.box(.04,.04,D-.04,P.alu,ux+sx*(uw/2-.02),hc+uh-.02,0,g);
- K.box(uw-.06,uh-.06,.012,L.cream,ux,hc+uh/2,D/2-.03,g);K.box(uw-.06,uh-.06,.012,L.cream,ux,hc+uh/2,-D/2+.03,g);K.box(.012,uh-.06,D-.06,L.cream,ux+uw/2-.03,hc+uh/2,0,g);K.box(uw-.06,.012,D-.06,L.cream,ux,hc+uh-.046,0,g);
- L.win(g,.22,.3,ux-.14,hc+.4,D/2-.024,true);L.win(g,.22,.3,ux+.14,hc+.4,D/2-.024,true);for(const sx of[-1,1])H.warn(g,ux+sx*.14,hc+uh-.1,D/2-.016,0,.07);
- K.plate(g,'NG',.14,.08,ux+uw/2-.001,hc+.55,0,'#c8312a','#ffffff',Math.PI/2);K.plate(g,'GOOD',.14,.06,ux+uw/2-.001,hc+.45,0,'#3fa66b','#ffffff',Math.PI/2);
- // Lift: profile column with a slide rail, the carriage with the rail pair; two fixed output lanes stacked.
- K.box(.05,uh-.06,.05,P.alu,ux-.05,hc+uh/2,-.3,g);K.box(.02,uh-.1,.03,M.steel,ux-.05,hc+uh/2,-.26,g);
- const lz=-.2;const car=new T.Group();g.add(car);car.position.set(ux,hb,lz);K.box(.06,.1,.05,M.dark,-.05,-.03,-.08,car);K.box(.3,.03,.2,P.alu,0,-.07,-.0,car);L.rails(car,.3,0,0,.0,.3,{lead:false,sensor:false});
- L.rails(g,.3,ux+.0,hb+.28,lz,.3,{lead:false,pcb:false,sensor:false});
- const inr=L.rails(g,.16,-W/2+.02,hb,lz,.3,{lead:false});L.rails(g,.16,W/2-.02,hb,lz,.3,{lead:false,pcb:false});
- K.box(.26,.012,.26,P.alu,ux+.1,hb+.12,.22,g);H.magazine(g,ux+.1,hb+.13,.22,.22,.26,.24,5);K.plate(g,'NG',.1,.06,ux+.14,hc+.18,D/2-.016,'#c8312a','#ffffff');
- return {group:g,height:1.72,lamps,update:(t,run)=>{if(run===false)return;car.position.y=hb+.14*(.5+.5*Math.sin(t*.8));if(inr.pcb)inr.pcb.position.x=((t*.15)%.2)-.1}};
+ // Upper structure (as the KGNB photo): a closed full-width rear housing, the control column at the left front, and on the
+ // right the sorter bay – open at the front and the right at belt height – under a hood with a window. Boards enter through
+ // an aperture in the column, run on the green belt and the lift carriage takes NG boards up to the rack in the hood.
+ const bz=-D/2+.2,bd=.36;K.box(W-.04,uh,bd,L.cream,0,hc+uh/2,bz,g);for(const sx of[-1,1])K.box(.042,uh+.012,.042,L.trim,sx*(W/2-.015),hc+uh/2,-D/2+.015,g);
+ K.box(W-.06,.03,.03,L.trim,0,hc+uh-.015,-D/2+.015,g);K.box(.03,.03,bd,L.trim,W/2-.015,hc+uh-.015,bz,g);
+ const cx=-.33,cw=.32,cz=.12,cdp=.48;K.box(cw,uh,cdp,L.cream,cx,hc+uh/2,cz,g);
+ K.box(.042,uh+.012,.042,L.trim,cx-cw/2+.015,hc+uh/2,cz+cdp/2-.015,g);K.box(.042,uh+.012,.042,L.trim,cx+cw/2-.015,hc+uh/2,cz+cdp/2-.015,g);K.box(cw-.03,.03,.03,L.trim,cx,hc+uh-.015,cz+cdp/2-.015,g);
+ L.door(g,.22,.3,cx,hc+.52,cz+cdp/2,-1);L.console(g,s,cx,1.0,cz+cdp/2+.02,.3);K.box(cw,.06,.1,L.cream,cx,.93,cz+cdp/2+.02,g);
+ K.box(.06,.04,.1,M.dark,cx,hc+uh-.32,-D/2-.05,g);L.lamp(g,cx,hc+uh-.3,-D/2-.08,lamps);H.logoBand(g,s,cw-.06,cx,hc+uh-.06,cz+cdp/2+.002,.03);
+ // Hood over the bay: front panel with its window, right side panel with a window, roof, light ceiling and trims.
+ const ux=.17,uw=.64,yb=hc+.4,hh=hc+uh-yb,hz=.18;L.cutPanel(g,uw-.04,hh-.02,ux,yb+hh/2,D/2-.03,0,[{x:-.1,y:0,w:.26,h:.2}]);
+ L.cutPanel(g,.6,hh-.02,ux+uw/2-.03,yb+hh/2,hz,Math.PI/2,[{x:0,y:0,w:.3,h:.2}]);K.box(uw-.04,.012,.6,L.cream,ux,hc+uh-.046,hz,g);K.box(uw-.06,.012,.58,P.light,ux,yb+.006,hz,g);
+ L.lightStrip(g,uw-.2,ux,hc+uh-.06,.1);K.box(.042,hh+.012,.042,L.trim,ux+uw/2-.015,yb+hh/2,D/2-.015,g);K.box(uw-.03,.03,.03,L.trim,ux,yb+hh-.015,D/2-.015,g);K.box(uw-.03,.03,.03,L.trim,ux,yb+.015,D/2-.015,g);
+ K.box(.03,.03,.6,L.trim,W/2-.015,yb+hh-.015,hz,g);K.box(.03,.03,.6,L.trim,W/2-.015,yb+.015,hz,g);
+ // Bay interior: dark back and left walls, the ivory deck with the green belt and side guides, a board on it.
+ K.box(uw-.06,yb-hc-.02,.006,P.screenBack,ux,(hc+yb)/2,bz+bd/2+.003,g);K.box(.006,yb-hc-.02,.48,P.screenBack,cx+cw/2+.003,(hc+yb)/2,cz,g);K.box(uw-.06,.006,.58,P.screenBack,ux,hc+.003,hz,g);
+ const lz=.15,belt=L.belt(g,.5,.28,.11,hb-.01,lz,.025);K.box(.54,.1,.4,L.cream,.11,hc+.056,lz,g);for(const sz of[-1,1])K.box(.5,.03,.012,P.alu,.11,hb,lz+sz*.15,g);
+ const board=H.pcb(g,.0,hb-.008,lz,.26,.22);K.box(.03,.04,.03,M.black,.3,hb+.02,lz-.17,g);K.box(.008,.008,.006,P.led,.3,hb+.028,lz-.187,g);
+ // Lift at the right end of the bay: profile column with a steel slide, the carriage with a rail stub (pokes out of the open side).
+ const px=.43;K.box(.05,yb-hc-.04,.05,P.alu,px,(hc+yb)/2,lz-.22,g);K.box(.02,yb-hc-.08,.03,M.steel,px,(hc+yb)/2,lz-.18,g);
+ const car=new T.Group();g.add(car);car.position.set(px,hb,lz);K.box(.06,.1,.05,M.dark,0,-.03,-.19,car);K.box(.18,.03,.2,P.alu,.03,-.07,-.05,car);L.rails(car,.18,.03,0,0,.28,{lead:false,sensor:false});
+ K.box(.26,.012,.26,P.alu,ux-.1,yb+.04,.06,g);H.magazine(g,ux-.1,yb+.046,.06,.22,.2,.24,4);
+ // Apertures where the boards pass through the column, the infeed stub outside it, labels.
+ for(const x of[cx-cw/2-.003,cx+cw/2+.003])K.box(.006,.09,.36,P.screenBack,x,hb-.01,lz,g);const inr=L.rails(g,.12,cx-cw/2-.065,hb,lz,.28,{lead:false,pcb:false});
+ K.plate(g,'NG',.14,.08,ux+uw/2-.03+.009,yb+hh-.07,hz-.0,'#c8312a','#ffffff',Math.PI/2);K.plate(g,'GOOD',.14,.06,ux+uw/2-.03+.009,yb+.08,hz,'#3fa66b','#ffffff',Math.PI/2);
+ K.plate(g,'NG',.1,.06,ux+.15,yb+hh-.08,D/2-.03+.009,'#c8312a','#ffffff');H.warn(g,ux+.22,yb+.06,D/2-.03+.009,0,.07);H.warn(g,ux-.1,yb+hh-.06,D/2-.03+.009,0,.06);
+ return {group:g,height:hc+uh+.32,lamps,update:(t,run)=>{if(run===false)return;belt.scroll(t*.3);board.position.x=((t*.15)%.4)-.2;const ph=(t*.4)%2;car.position.y=hb+.2*(ph<1?(1-Math.cos(ph*Math.PI))/2:1-(1-Math.cos((ph-1)*Math.PI))/2)}};
 });
 
 // ───────────────────────────── boardFlipper ─────────────────────────────
@@ -215,9 +270,9 @@ MB.add('pcbBuffer',(K,s)=>{
  K.box(W-.08,.012,D-.08,L.cream,0,.08,0,g);K.box(W-.1,.012,.012,P.dark,0,.41,D/2-.01,g);
  const tint=P.tint;K.box(W-.1,Hf-.84,.008,tint,0,.8+(Hf-.84)/2,D/2-.028,g).castShadow=false;K.box(W-.1,Hf-.84,.008,tint,0,.8+(Hf-.84)/2,-D/2+.028,g).castShadow=false;
  for(const sx of[-1,1])K.box(.008,Hf-.84,D-.1,tint,sx*(W/2-.028),.8+(Hf-.84)/2,0,g).castShadow=false;K.box(.03,Hf-.84,.03,P.alu,0,.8+(Hf-.84)/2,D/2-.028,g);
- K.box(.16,.25,.012,M.dark,-.28,1.3,D/2-.02,g);H.estop(g,.2,1.4,D/2-.012);K.cyl(.009,.012,P.green,.3,1.4,D/2-.012,g,'z',10);
+ K.box(.16,.25,.012,M.dark,-.28,1.3,D/2-.02,g);K.box(.42,.42,.012,L.cream,.25,1.29,D/2-.018,g);K.box(.43,.43,.004,P.dark,.25,1.29,D/2-.026,g);H.estop(g,.2,1.43,D/2-.012);K.cyl(.009,.012,P.green,.32,1.43,D/2-.012,g,'z',10);
  // Monitor box on the upper right of the front.
- K.box(.3,.24,.08,K.mat(0x9ea3a6,.5,.45),.3,1.22,D/2+.02,g);H.screen(g,.3,1.22,D/2+.06+.0125,.26,.17,H.card(s));
+ K.box(.3,.24,.06,K.mat(0x9ea3a6,.5,.45),.27,1.22,D/2+.018,g);H.screen(g,.27,1.22,D/2+.048+.0125,.26,.17,H.card(s));
  // Inside: the rack of belt shelves with boards on them and the lift carriage at the back.
  const n=15;for(let i=0;i<n;i++){const y=.84+i*.045;for(const sz of[-1,1])K.box(.7,.008,.012,P.belt,0,y,sz*.17,g);for(const sz of[-1,1])K.box(.7,.012,.03,P.alu,0,y-.01,sz*.2,g);if(i%2)H.pcb(g,0,y+.006,0,.4,.3)}
  for(const sz of[-1,1])K.box(.04,Hf-.84,.04,P.alu,-.38,.8+(Hf-.84)/2,sz*.2,g);for(const sz of[-1,1])K.box(.04,Hf-.84,.04,P.alu,.38,.8+(Hf-.84)/2,sz*.2,g);
@@ -236,15 +291,20 @@ MB.add('coolingConveyor',(K,s)=>{
  const L=lib(K),{H,P,M,T}=L,g=new T.Group(),lamps=[],W=1.8,D=.8,Hc=.85,hb=.92;
  const c=L.cab(g,W,Hc,D,0,0),zf=c.userData.zf;K.box(.03,Hc-.1,.03,L.trim,0,Hc/2+.02,D/2-.012,g);
  for(const sx of[-1,1]){L.door(c,.78,.4,sx*.45,.28,zf,sx);L.panel(c,.78,.26,sx*.45,.66,zf);L.vent(c,.5,.14,sx*.45,.66,zf+.016)}
- H.nameplate(c,s,-.45,.56,zf+.02,.3,.07);L.lot(c,s,.75,.56,zf+.02);K.plate(c,'CE',.05,.05,.8,.2,zf+.02,'#ecebe5','#1c1b18');
- // Control box at the left end with the screen and the e-stop.
+ H.nameplate(c,s,-.45,.42,zf+.03,.3,.07);L.lot(c,s,.72,.42,zf+.03);K.plate(c,'CE',.05,.05,.8,.14,zf+.03,'#ecebe5','#1c1b18');
+ // Control box at the left front corner of the deck with the screen and the e-stop.
  K.box(.34,.14,.1,L.cream,-W/2+.17,Hc+.07,D/2-.05,g);K.box(.35,.15,.004,P.dark,-W/2+.17,Hc+.07,D/2-.003,g);H.screen(g,-W/2+.14,Hc+.075,D/2+.0125,.14,.08,H.card(s));H.estop(g,-W/2+.3,Hc+.07,D/2+.006);K.cyl(.009,.012,M.dark,-W/2+.04,Hc+.07,D/2+.006,g,'z',10);
- // Rails through, on the deck, boards; the row of eight fan units over them with their guard rings.
- const r=L.rails(g,W-.1,0,hb,-.18,.36,{sensor:false});const boards=[];for(let i=0;i<3;i++)boards.push(H.pcb(g,-.6+i*.6,hb+.004,-.18,.28,.28));
- const fans=[];for(let i=0;i<8;i++){const x=-W/2+.16+i*(W-.32)/7;K.cyl(.095,.02,M.dark,x,Hc+.01,.17,g,'y',24);K.cyl(.09,.012,M.steel,x,Hc+.026,.17,g,'y',24);
-  const hold=H.grp(g,x,Hc+.03,.17);hold.rotation.x=-Math.PI/2;fans.push(H.fan(hold,0,0,0,.075,'z'));for(let k=0;k<2;k++)K.torus(.035+k*.03,.004,M.dark,x,Hc+.062,.17,g,'y',24)}
- for(const x of[-.45,.45])K.box(.8,.02,.3,L.creamD,x,Hc+.0,.17,g);H.hose(g,[[-W/2+.1,Hc,-.05],[-W/2-.03,Hc-.2,0],[-W/2-.03,.1,0]],.006,P.cableB);
- return {group:g,height:hb+.02,lamps,update:(t,run)=>{if(run===false)return;for(const f of fans)f.rotation.y=t*14;for(let i=0;i<3;i++)boards[i].position.x=((t*.25+i*.6+W)%(W-.3))-(W-.3)/2}};
+ // Rails along the deck with boards on them; over the rails a fan canopy (back wall, end cheeks above board height, top
+ // plate) carrying the row of eight fan units with their guard rings, blowing down on the boards.
+ const rz=-.1,cz=rz,cdp=.5,ct=hb+.13;K.box(W-.14,.012,cdp+.02,P.light,0,Hc+.006,rz,g);
+ const r=L.rails(g,W-.1,0,hb,rz,.36,{sensor:false});const boards=[];for(let i=0;i<3;i++)boards.push(H.pcb(g,-.6+i*.6,hb+.004,rz,.28,.28));
+ K.box(W-.16,ct-Hc-.012,.012,L.cream,0,(ct+Hc)/2,cz-cdp/2+.006,g);for(const sx of[-1,1])K.box(.012,.09,cdp,L.cream,sx*(W/2-.086),ct-.055,cz,g);
+ K.box(W-.16,.02,cdp,L.cream,0,ct,cz,g);for(const sx of[-1,1])K.box(.03,.03,.03,L.trim,sx*(W/2-.095),ct+.025,cz+cdp/2-.015,g);K.box(W-.16,.012,.004,P.dark,0,ct-.1,cz+cdp/2+.002,g);
+ const fans=[];for(let i=0;i<8;i++){const x=-W/2+.16+i*(W-.32)/7;K.cyl(.095,.02,M.dark,x,ct+.02,cz,g,'y',24);K.cyl(.09,.012,M.steel,x,ct+.036,cz,g,'y',24);
+  const hold=H.grp(g,x,ct+.04,cz);hold.rotation.x=-Math.PI/2;fans.push(H.fan(hold,0,0,0,.075,'z'));for(let k=0;k<2;k++)K.torus(.035+k*.03,.004,M.dark,x,ct+.072,cz,g,'y',24)}
+ K.box(.1,.08,.2,M.dark,-W/2+.14,ct-.06,cz-cdp/2+.1,g);H.hose(g,[[-W/2+.1,ct-.06,cz-cdp/2+.1],[-W/2+.08,Hc+.14,cz+.3],[-W/2+.12,Hc+.1,D/2-.05]],.006,P.cableB);
+ H.hose(g,[[-W/2+.1,Hc,-.05],[-W/2-.03,Hc-.2,0],[-W/2-.03,.1,0]],.006,P.cableB);
+ return {group:g,height:ct+.11,lamps,update:(t,run)=>{if(run===false)return;for(const f of fans)f.rotation.y=t*14;for(let i=0;i<3;i++)boards[i].position.x=((t*.25+i*.6+W)%(W-.3))-(W-.3)/2}};
 });
 
 // ───────────────────────────── turntable ─────────────────────────────
@@ -265,25 +325,33 @@ MB.add('turntable',(K,s)=>{
 
 // ───────────────────────────── lifterConveyor ─────────────────────────────
 MB.add('lifterConveyor',(K,s)=>{
- const L=lib(K),{H,P,M,T}=L,g=new T.Group(),lamps=[],W=1.0,D=.9,Ht=2.95;
- // Ivory steel portal: four posts, head frame, mid rails; polycarbonate panels on three sides.
+ const L=lib(K),{H,P,M,T}=L,root=new T.Group(),g=new T.Group(),lamps=[],W=1.0,D=.9,Ht=2.95;root.add(g);
+ // Ivory steel portal: four posts, head frame, mid rails; polycarbonate panels just outside the posts on three sides,
+ // the front panel stops above the low infeed opening.
  for(const sx of[-1,1])for(const sz of[-1,1])K.box(.07,Ht,.07,L.white,sx*(W/2-.035),Ht/2,sz*(D/2-.035),g);
  for(const y of[.4,1.65,Ht-.035]){for(const sz of[-1,1])K.box(W-.14,.07,.07,L.white,0,y,sz*(D/2-.035),g);for(const sx of[-1,1])K.box(.07,.07,D-.14,L.white,sx*(W/2-.035),y,0,g)}
- for(const sx of[-1,1])K.box(.1,.02,.1,M.dark,sx*(W/2-.035),.01,0,g);L.pads(g,W,D,.035);
- for(const sz of[-1,1])K.box(W-.14,Ht-.5,.006,L.tealGlass,0,.4+(Ht-.5)/2+.03,sz*(D/2-.035+.04*sz),g).castShadow=false;
- K.box(.006,Ht-.5,D-.14,L.tealGlass,-(W/2-.035)-.04,.4+(Ht-.5)/2+.03,0,g).castShadow=false;
+ for(const sx of[-1,1])for(const sz of[-1,1])K.box(.1,.012,.1,M.dark,sx*(W/2-.035),.006,sz*(D/2-.035),g);
+ const gy0=.44,gy1=Ht-.07,fy0=1.08;K.box(W-.14,gy1-gy0,.006,L.tealGlass,0,(gy0+gy1)/2,-(D/2+.006),g).castShadow=false;K.box(W-.14,gy1-fy0,.006,L.tealGlass,0,(fy0+gy1)/2,D/2+.006,g).castShadow=false;
+ K.box(.006,gy1-gy0,D-.14,L.tealGlass,-(W/2+.006),(gy0+gy1)/2,0,g).castShadow=false;K.box(W-.14,.04,.03,L.white,0,fy0,D/2-.035,g);
+ for(const sz of[-1,1])for(const sx of[-1,1])for(const y of[.6,2.5])K.cyl(.008,.012,M.dark,sx*(W/2-.08),y,sz*(D/2+.01),g,'z',8);
  // Lift: belts from top pulleys to the floor, the drive motor on the head, the carriage with its roller bed.
  const bz=-D/2+.12;for(const sx of[-1,1]){K.cyl(.05,.05,M.dark,sx*.3,Ht-.1,bz,g,'x',16);K.cyl(.05,.05,M.dark,sx*.3,.2,bz,g,'x',16);K.box(.03,Ht-.3,.006,P.belt,sx*.3,Ht/2+.05,bz+.05,g);K.box(.03,Ht-.3,.006,P.belt,sx*.3,Ht/2+.05,bz-.05,g)}
  K.cyl(.02,.7,M.steel,0,Ht-.1,bz,g,'x',10);L.motor(g,0,Ht-.1,bz-.15,.04,.14,Math.PI/2);K.box(.06,Ht-.5,.06,P.alu,0,Ht/2,bz+.14,g);
  const car=new T.Group();g.add(car);car.position.set(0,.8,0);K.box(.7,.08,.08,L.white,0,0,bz+.05,car);for(const sz of[-1,1])K.box(.72,.06,.04,L.frameGrey,0,.02,sz*.3,car);
  const rollers=[];for(let i=0;i<7;i++)rollers.push(K.cyl(.025,.58,M.steel,-.3+i*.1,.04,0,car,'z',12));K.box(.08,.12,.06,M.dark,0,-.02,bz+.12,car);
- // Infeed / outfeed roller stubs through the front (low) and the right side (high); safety stickers; control cabinet.
- const stub=(x,y,z,ry)=>{const gg=H.grp(g,x,y,z,ry);for(const sz of[-1,1])K.box(.3,.06,.04,L.frameGrey,0,0,sz*.3,gg);for(let i=0;i<3;i++)K.cyl(.025,.58,M.steel,-.1+i*.1,.02,0,gg,'z',12);return gg};
- stub(0,.8,D/2+.1,Math.PI/2);stub(W/2+.1,2.4,0,0);
- for(const y of[1.0,2.0])H.warn(g,W/2-.035,y,D/2-.0,0,.09);K.plate(g,'LIFT',.3,.1,0,Ht-.1,D/2+.002,'#1c1b18','#e3b82e');
- const cb=H.grp(g,W/2+.08,1.3,-.1,Math.PI/2);K.box(.34,.5,.16,L.cream,0,0,0,cb);K.box(.31,.47,.004,P.dark,0,0,-.081,cb);H.screen(cb,0,.1,.08+.0125,.22,.14,H.card(s));H.keypad(cb,-.05,-.12,.086,4,2,.022);
- H.estop(cb,.09,-.12,.086);H.nameplate(cb,s,0,-.22,.086,.28,.07);L.lot(g,s,.3,2.6,D/2+.002);K.box(.06,.04,.1,M.dark,-W/2+.1,Ht-.5,-D/2-.05,g);L.lamp(g,-W/2+.1,Ht-.48,-D/2-.08,lamps);
- return {group:g,height:Ht+.15,lamps,update:(t,run)=>{if(run===false)return;const ph=(t*.25)%2,e=ph<1?(1-Math.cos(ph*Math.PI))/2:1-(1-Math.cos((ph-1)*Math.PI))/2;car.position.y=.8+1.6*e;for(const r of rollers)r.rotation.z=t*4}};
+ // Infeed / outfeed roller stubs through the open lower front and the open right side (high); each on a leg.
+ const stub=(x,y,z,ry,len)=>{const gg=H.grp(g,x,y,z,ry);for(const sz of[-1,1])K.box(len,.06,.04,L.frameGrey,0,0,sz*.3,gg);const n=Math.max(2,Math.round(len/.1));for(let i=0;i<n;i++)K.cyl(.025,.58,M.steel,-len/2+.05+i*(len-.1)/(n-1),.02,0,gg,'z',12);return gg};
+ stub(0,.8,D/2+.05,Math.PI/2,.2);for(const sx of[-1,1])K.box(.04,.77,.04,L.frameGrey,sx*.3,.385,D/2+.12,g);
+ stub(W/2+.06,2.4,0,0,.22);K.box(.07,.06,D-.14,L.white,W/2-.035,2.34,0,g);
+ for(const y of[1.3,2.0])H.warn(g,W/2-.035,y,D/2+.012,0,.09);K.plate(g,'LIFT',.3,.1,0,Ht-.15,D/2+.012,'#1c1b18','#e3b82e');
+ // Control cabinet on the left post (the open right side carries the outfeed), lamp tower at the back.
+ const cb=H.grp(g,-W/2-.088,1.62,.1,-Math.PI/2);K.box(.34,.5,.16,L.cream,0,0,0,cb);K.box(.35,.51,.004,P.dark,0,0,-.08,cb);H.screen(cb,0,.1,.08+.0125,.22,.14,H.card(s));H.keypad(cb,-.05,-.12,.086,4,2,.022);
+ H.estop(cb,.09,-.12,.086);H.nameplate(cb,s,0,-.215,.081,.28,.06);K.box(.02,.08,.004,M.dark,-.17,0,.081,cb);H.logoBand(cb,s,.3,0,.22,.081,.025);
+ L.lot(g,s,.3,2.55,D/2+.012);K.box(.06,.04,.1,M.dark,-W/2+.1,Ht-.5,-D/2-.05,g);L.lamp(g,-W/2+.1,Ht-.48,-D/2-.08,lamps);
+ H.hose(g,[[-W/2-.09,1.37,.2],[-W/2-.03,.9,.3],[-W/2-.03,.45,.3]],.008,P.cableB);
+ // Centre the footprint on the origin.
+ g.updateMatrixWorld(true);const bb=new T.Box3().setFromObject(g);g.position.x=-(bb.min.x+bb.max.x)/2;g.position.z=-(bb.min.z+bb.max.z)/2;
+ return {group:root,height:Ht+.15,lamps,update:(t,run)=>{if(run===false)return;const ph=(t*.25)%2,e=ph<1?(1-Math.cos(ph*Math.PI))/2:1-(1-Math.cos((ph-1)*Math.PI))/2;car.position.y=.8+1.6*e;for(const r of rollers)r.rotation.z=t*4}};
 });
 
 // ───────────────────────────── beltConveyor ─────────────────────────────
@@ -294,7 +362,7 @@ MB.add('beltConveyor',(K,s)=>{
  for(const sz of[-1,1]){K.box(Lx,.08,.04,P.alu,Lx/2,0,sz*(bw/2+.03),u);K.box(Lx-.1,.03,.02,P.alu,Lx/2,.065,sz*(bw/2+.02),u)}
  const belt=L.belt(u,Lx-.08,bw,Lx/2,.04,0,.03);for(const sx of[0,1])K.cyl(.045,bw+.02,M.dark,.04+sx*(Lx-.08),.0,0,u,'z',16);
  for(let i=0;i<5;i++)K.box(.03,.03,bw+.06,P.alu,.3+i*(Lx-.6)/4,-.055,0,u);
- L.motor(u,Lx-.3,-.12,-(bw/2+.12),.045,.16);K.box(.06,.1,.06,M.dark,Lx-.08,-.09,-(bw/2+.05),u);H.hose(u,[[Lx-.3,-.08,-(bw/2+.2)],[Lx-.6,-.2,-(bw/2+.1)],[Lx/2,-.2,-(bw/2+.05)]],.006,P.cableB);
+ L.motor(u,Lx-.55,-.152,-.1,.045,.16);K.box(.5,.015,.14,M.dark,Lx-.54,-.0775,-.1,u);K.box(.06,.1,.06,M.dark,Lx-.08,-.09,-(bw/2+.05),u);H.hose(u,[[Lx-.55,-.11,-.05],[Lx-.75,-.2,.0],[Lx/2+.08,-.16,.0]],.006,P.cableB);
  K.box(.16,.2,.1,P.light,Lx/2,-.16,0,u);K.box(.17,.21,.004,P.dark,Lx/2,-.16,.051,u);
  // Legs with feet and cross braces, each cut to the belt height at its station.
  const legX=incline?[.2,1.1,2.1]:[.25,2.25];for(const lx of legX){const hy=y0+Math.sin(ang)*lx-.04;for(const sz of[-1,1]){K.box(.04,hy-.02,.04,M.steel,-Lx/2+lx,hy/2+.01,sz*(bw/2+.03),g);K.box(.1,.012,.1,M.dark,-Lx/2+lx,.006,sz*(bw/2+.03),g)}
@@ -345,20 +413,36 @@ MB.add('transferConveyor',(K,s)=>{
  for(const sz of[-1,1])K.box(Lx,.1,.06,L.white,0,hb-.05,sz*(Dz/2-.03),g);for(const sx of[-1,1])K.box(.06,.1,Dz-.12,L.white,sx*(Lx/2-.03),hb-.05,0,g);
  const belts=[];for(const sz of[-1,1]){belts.push(L.belt(g,Lx-.2,.3,0,hb+.03,sz*.24,.03));for(const sx of[-1,1])K.cyl(.035,.32,M.dark,sx*(Lx/2-.1),hb,sz*.24,g,'z',14)}
  K.box(Lx-.2,.04,.06,P.alu,0,hb,0,g);for(const sx of[-1,1])for(const sz of[-1,1]){K.box(.06,hb-.1,.06,L.white,sx*(Lx/2-.15),(hb-.1)/2,sz*(Dz/2-.03),g);K.box(.14,.012,.14,M.dark,sx*(Lx/2-.15),.006,sz*(Dz/2-.03),g)}
- for(const sx of[-1,1])K.box(.06,.06,Dz-.12,L.white,sx*(Lx/2-.15),.3,0,g);L.motor(g,.6,hb-.2,-(Dz/2+.08),.045,.14);
- // Portal: posts, head beams and the x beam carrying the carriage; cable chain in its trough.
+ for(const sx of[-1,1])K.box(.06,.06,Dz-.12,L.white,sx*(Lx/2-.15),.3,0,g);L.motor(g,.6,hb-.2,-(Dz/2+.08),.045,.14);K.box(.06,.08,.06,M.dark,.6,hb-.13,-(Dz/2+.03),g);
+ // Portal: posts, head beams and the x beam carrying the carriage; the cable-chain trough on the back of the beam top.
  for(const sx of[-1,1])for(const sz of[-1,1])K.box(.08,Hp,.08,L.white,sx*(Lx/2-.1),Hp/2,sz*(Dz/2+.15),g);for(const sx of[-1,1])K.box(.08,.12,Dz+.38,L.white,sx*(Lx/2-.1),Hp+.06,0,g);
- K.box(Lx-.12,.14,.14,L.white,0,Hp+.06,0,g);K.box(Lx-.3,.03,.03,M.steel,0,Hp+.06,.085,g);K.box(Lx-.2,.03,.1,M.dark,0,Hp+.14,-.1,g);
- const car=new T.Group();g.add(car);car.position.set(0,Hp+.06,0);K.box(.28,.22,.12,L.white,0,0,.14,car);for(const sy of[-1,1])K.box(.3,.02,.14,M.dark,0,sy*.12,.14,car);
- const zax=new T.Group();car.add(zax);zax.position.set(0,0,.3);K.box(.08,.9,.08,P.alu,0,-.3,0,zax);K.box(.12,.06,.12,M.dark,0,.1,0,zax);
+ K.box(Lx-.12,.14,.14,L.white,0,Hp+.06,0,g);K.box(Lx-.3,.03,.03,M.steel,0,Hp+.06,.085,g);const ty=Hp+.14,tz=-.1;K.box(Lx-.3,.02,.1,M.dark,0,ty-.01,tz,g);for(const sz of[-1,1])K.box(Lx-.3,.05,.006,M.dark,0,ty+.015,tz+sz*.053,g);
+ const car=new T.Group();g.add(car);car.position.set(-.6,Hp+.06,0);K.box(.28,.22,.12,L.white,0,0,.14,car);for(const sy of[-1,1])K.box(.3,.02,.14,M.dark,0,sy*.12,.14,car);
+ // Chain bracket: a post on the carriage and an arm over the beam to the moving end of the chain.
+ const cy0=ty+.0175,cy1=cy0+.07,armY=cy1+.0175+.008-(Hp+.06);K.box(.05,armY-.11+.008,.03,M.dark,.0,(armY+.11)/2,.19,car);K.box(.05,.016,.33,M.dark,0,armY,.035,car);
+ const zax=new T.Group();car.add(zax);zax.position.set(0,0,.3);K.box(.08,.9,.08,P.alu,0,-.3,0,zax);K.box(.12,.06,.12,M.dark,0,.1,0,zax);K.box(.1,.18,.06,M.dark,0,.0,.23,car);
  K.box(.34,.03,.26,P.alu,0,-.76,0,zax);for(const sx of[-1,1])for(const sz of[-1,1]){K.cyl(.012,.06,M.steel,sx*.12,-.8,sz*.09,zax,'y',8);K.cyl(.028,.015,M.black,sx*.12,-.835,sz*.09,zax,'y',14)}
  for(const sx of[-1,1]){K.box(.03,.12,.04,M.dark,sx*.19,-.82,0,zax);K.box(.012,.08,.03,M.steel,sx*.21,-.9,0,zax)}
- const chainG=new T.Group();car.add(chainG);H.cableChain(chainG,.0,-.7,.14,-.1);H.hose(g,[[-.8,Hp+.14,-.1],[-.95,Hp-.2,-.4],[-.95,1.0,-.5],[-.8,hb-.1,-.5]],.008,P.cableB);
+ // Energy chain: fixed end on the beam at xa, moving end under the carriage arm; lower run in the trough, upper run on top,
+ // the bend follows half the carriage stroke (constant chain length), links repositioned in update().
+ const xa=-.78,Lc=1.42,rr=.035,links=[],nL=Math.round(Lc/.055);for(let i=0;i<nL;i++)links.push(K.box(.05,.032,.05,P.black,0,cy0,tz,g));K.box(.06,.05,.06,M.dark,xa-.03,cy0,tz,g);
+ const poseChain=xc=>{const xb=(Lc-Math.PI*rr+xa+xc)/2,l1=xb-xa,arc=Math.PI*rr;for(let i=0;i<nL;i++){const sd=(i+.5)*Lc/nL,m=links[i];
+  if(sd<l1){m.position.set(xa+sd,cy0,tz);m.rotation.z=0}else if(sd<l1+arc){const a=(sd-l1)/rr;m.position.set(xb+Math.sin(a)*rr,cy0+rr-Math.cos(a)*rr,tz);m.rotation.z=a}
+  else{m.position.set(xb-(sd-l1-arc),cy1,tz);m.rotation.z=0}}};
+ H.hose(g,[[xa-.03,cy0,tz],[-.95,Hp-.2,-.4],[-.95,1.0,-.5],[-.8,hb-.1,-.5]],.008,P.cableB);
+ // The part being transferred (a white panel tray) on the front belt.
+ const part=K.box(.3,.025,.26,K.mat(0xf1f0ea,.05,.5),-.6,hb+.03+.0125,.3,g);const S=.31;
  // Light-curtain posts at both ends, lamp tower, control box on a post, labels.
  for(const sx of[-1,1])for(const sz of[-1,1])L.lcPost(g,sx*(Lx/2+.05),sz*(Dz/2+.05),1.1,sz<0?Math.PI:0);
  K.box(.1,.04,.06,M.dark,-(Lx/2-.1)-.07,Hp-.42,-(Dz/2+.15),g);L.lamp(g,-(Lx/2-.1)-.1,Hp-.4,-(Dz/2+.15),lamps);K.box(.3,.4,.14,L.cream,Lx/2-.1,1.3,Dz/2+.17,g);K.box(.31,.41,.004,P.dark,Lx/2-.1,1.3,Dz/2+.099,g);H.screen(g,Lx/2-.1,1.38,Dz/2+.24+.0125,.22,.14,H.card(s));
  H.estop(g,Lx/2-.02,1.18,Dz/2+.24);H.keypad(g,Lx/2-.16,1.18,Dz/2+.24,3,2,.022);H.nameplate(g,s,-.5,hb-.05,Dz/2+.001,.3,.07);L.lot(g,s,.3,hb-.05,Dz/2+.001);H.warn(g,.7,hb-.05,Dz/2+.001,0,.06);
- return {group:g,height:Hp+.24,lamps,update:(t,run)=>{if(run===false)return;const ph=(t*.3)%2,e=ph<1?(1-Math.cos(ph*Math.PI))/2:1-(1-Math.cos((ph-1)*Math.PI))/2;car.position.x=-.6+1.2*e;
-  zax.position.y=-.25*Math.max(0,Math.sin(t*.6*Math.PI));for(const b of belts)b.scroll(t*.4);chainG.position.x=0}};
+ poseChain(-.6);
+ const ease=u=>(1-Math.cos(Math.min(1,Math.max(0,u))*Math.PI))/2,pyBelt=hb+.03+.0125,pyHeld=Hp+.06-.8425-.0125;
+ // Cycle (8 s): lower and pick at -0.6, lift, travel to +0.6, lower and place, lift, travel back; the placed part rides off on the belt.
+ return {group:g,height:Hp+.3,lamps,update:(t,run)=>{if(run===false)return;const u=(t*.8)%8;let x=-.6,dn=0;
+  if(u<1)dn=Math.sin(u*Math.PI);else if(u<2)dn=0;else if(u<4)x=-.6+1.2*ease((u-2)/2);else if(u<5){x=.6;dn=Math.sin((u-4)*Math.PI)}else if(u<6)x=.6;else x=.6-1.2*ease((u-6)/2);
+  car.position.x=x;zax.position.y=-S*dn;poseChain(x);
+  if(u<.5)part.position.set(-.6,pyBelt,.3);else if(u<4.5)part.position.set(x,pyHeld-S*dn,.3);else part.position.set(Math.min(.85,.6+.1*(u-4.5)),pyBelt,.3);
+  for(const b of belts)b.scroll(t*.4)}};
 });
 })();

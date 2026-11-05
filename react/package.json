@@ -1,0 +1,23 @@
+{
+  "name": "plant-machinery-portal",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Plant Machinery Portal: three plants, every hall in 3D with every machine from the catalogue, in React + three.js.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "data": "node ../tools/export_data.mjs"
+  },
+  "dependencies": {
+    "lucide-react": "^1.61.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.1.2",
+    "vite": "^8.3.5"
+  }
+}
