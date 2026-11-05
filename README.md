@@ -13,3 +13,4 @@ Three complete production plants — an electronics & display plant, a refrigera
 
 Machine data and photographs come from the plants' public equipment listings. Line groupings, station assignments and categories are an engineering assessment; availability, condition and terms are to be confirmed with each seller.
 # factory
+# factory
