@@ -422,7 +422,7 @@ MB.add('transferConveyor',(K,s)=>{
  const cy0=ty+.0175,cy1=cy0+.07,armY=cy1+.0175+.008-(Hp+.06);K.box(.05,armY-.11+.008,.03,M.dark,.0,(armY+.11)/2,.19,car);K.box(.05,.016,.33,M.dark,0,armY,.035,car);
  const zax=new T.Group();car.add(zax);zax.position.set(0,0,.3);K.box(.08,.9,.08,P.alu,0,-.3,0,zax);K.box(.12,.06,.12,M.dark,0,.1,0,zax);K.box(.1,.18,.06,M.dark,0,.0,.23,car);
  K.box(.34,.03,.26,P.alu,0,-.76,0,zax);for(const sx of[-1,1])for(const sz of[-1,1]){K.cyl(.012,.06,M.steel,sx*.12,-.8,sz*.09,zax,'y',8);K.cyl(.028,.015,M.black,sx*.12,-.835,sz*.09,zax,'y',14)}
- for(const sx of[-1,1]){K.box(.03,.12,.04,M.dark,sx*.19,-.82,0,zax);K.box(.012,.08,.03,M.steel,sx*.21,-.9,0,zax)}
+ for(const sx of[-1,1]){K.box(.03,.08,.04,M.dark,sx*.185,-.8,0,zax);K.box(.012,.04,.03,M.steel,sx*.176,-.85,0,zax)}
  // Energy chain: fixed end on the beam at xa, moving end under the carriage arm; lower run in the trough, upper run on top,
  // the bend follows half the carriage stroke (constant chain length), links repositioned in update().
  const xa=-.78,Lc=1.42,rr=.035,links=[],nL=Math.round(Lc/.055);for(let i=0;i<nL;i++)links.push(K.box(.05,.032,.05,P.black,0,cy0,tz,g));K.box(.06,.05,.06,M.dark,xa-.03,cy0,tz,g);

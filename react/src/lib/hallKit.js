@@ -106,7 +106,7 @@ export function createHallKit(THREE){
  // The floor: concrete tiles of about 2 m, a green walkway along the open front with white edge lines and direction
  // arrows, and a second walkway along the left wall.
  function floorSlab(floor,{walkZ=null}={}){materials();const g=new THREE.Group(),W=floor.x1-floor.x0,D=floor.z1-floor.z0,cx=(floor.x0+floor.x1)/2,cz=(floor.z0+floor.z1)/2;
-  const ft=repeatOf(T.floor,W/2.2,D/2.2);ft.anisotropy=8;const fl=new THREE.Mesh(keep(new THREE.PlaneGeometry(W,D)),mat(0xffffff,.02,.32,{map:ft}));fl.rotation.x=-Math.PI/2;fl.position.set(cx,0,cz);fl.receiveShadow=true;fl.name='floor';g.add(fl);
+  const ft=repeatOf(T.floor,W/2.2,D/2.2);ft.anisotropy=8;const fl=new THREE.Mesh(keep(new THREE.PlaneGeometry(W,D)),mat(0xffffff,.02,.58,{map:ft,envMapIntensity:.5}));fl.rotation.x=-Math.PI/2;fl.position.set(cx,0,cz);fl.receiveShadow=true;fl.name='floor';g.add(fl);
   const wz=walkZ==null?floor.z1-1.8:walkZ;
   for(const [w,d,x,z,m] of [[W-1,1.6,cx,wz,M.walk],[W-1,.05,cx,wz-.85,M.white],[W-1,.05,cx,wz+.85,M.white],[1.6,D-4,floor.x0+1.7,cz-1,M.walk]]){const p=new THREE.Mesh(keep(new THREE.PlaneGeometry(w,d)),m);p.rotation.x=-Math.PI/2;p.position.set(x,.003,z);p.receiveShadow=true;g.add(p)}
   const n=Math.max(3,Math.round(W/6));for(let i=0;i<n;i++){const a=new THREE.Mesh(keep(new THREE.PlaneGeometry(.9,.45)),keep(new THREE.MeshBasicMaterial({map:T.arrow,transparent:true,depthWrite:false})));a.rotation.x=-Math.PI/2;a.position.set(floor.x0+3+i*(W-6)/(n-1),.006,wz);g.add(a)}

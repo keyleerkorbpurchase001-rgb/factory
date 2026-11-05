@@ -28,7 +28,7 @@ const rr=(x,X,Y,W,H,r)=>{x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+W,Y,X+W,Y+H,r);
 const STATUS_COLOR={na:'#d2453b',shared:'#3b6fb8',sup:'#8a949e',ok:'#3fa66b',alt:'#3fa66b',bundled:'#d8a531',suggest:'#2f9fae'};
 export const QUALITY={std:{shadow:1024,ratio:1.25},high:{shadow:2048,ratio:2}};
 
-export function createHallScene({host,layout:L,line:startLine=null,quality='std',labels='miss',run:startRun=true,on={}}){
+export function createHallScene({host,layout:L,line:startLine=null,quality='std',labels:startLabels='miss',run:startRun=true,on={}}){
  const reduced=typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;
  const dark=typeof matchMedia==='function'&&matchMedia('(prefers-color-scheme: dark)').matches&&document.documentElement.dataset.theme!=='light'||document.documentElement.dataset.theme==='dark';
  let handlers=on;const emit=(k,...a)=>{try{handlers[k]&&handlers[k](...a)}catch(e){console.error(e)}};
@@ -38,7 +38,7 @@ export function createHallScene({host,layout:L,line:startLine=null,quality='std'
  // ---------- renderer, scene, camera, controls ----------
  const canvas=document.createElement('canvas');canvas.className='hk-canvas';canvas.setAttribute('aria-label',`3D view of the ${L.name}`);host.appendChild(canvas);
  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
- renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;
+ renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;
  // PCFSoftShadowMap was removed in three r18x; PCFShadowMap with a shadow radius gives the soft edges now.
  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;
  const scene=new THREE.Scene();const bg=new THREE.Color(dark?0x2a3138:0xc9ced2);scene.background=bg;scene.fog=new THREE.Fog(bg,span*1.1+25,span*2.6+70);
@@ -47,8 +47,8 @@ export function createHallScene({host,layout:L,line:startLine=null,quality='std'
  // reflections of a lit hall for the metal and glass
  const pmrem=new THREE.PMREMGenerator(renderer);const room=new RoomEnvironment();const envRT=pmrem.fromScene(room,.04);scene.environment=envRT.texture;scene.environmentIntensity=.42;room.traverse?.(o=>{o.geometry?.dispose();o.material?.dispose?.()});pmrem.dispose();
  // lights: sky / floor bounce, the key light through the roof (shadows over the whole floor), a cool fill from the back
- scene.add(new THREE.HemisphereLight(0xf4f7fa,0x5e6468,1.35));
- const R=Math.hypot(L.bounds.W,L.bounds.D)/2+2;const key=new THREE.DirectionalLight(0xfff8ef,2.3);const kdir=new THREE.Vector3(-.38,1,.48).normalize();
+ scene.add(new THREE.HemisphereLight(0xf4f7fa,0x5e6468,1.1));
+ const R=Math.hypot(L.bounds.W,L.bounds.D)/2+2;const key=new THREE.DirectionalLight(0xfff8ef,2.0);const kdir=new THREE.Vector3(-.38,1,.48).normalize();
  key.position.set(cx+kdir.x*R*2,kdir.y*R*2,cz+kdir.z*R*2);key.target.position.set(cx,0,cz);key.castShadow=true;key.shadow.bias=-.0004;key.shadow.normalBias=.02;key.shadow.radius=3;
  Object.assign(key.shadow.camera,{left:-R,right:R,top:R,bottom:-R,near:.5,far:R*4+H});key.shadow.camera.updateProjectionMatrix();scene.add(key,key.target);
  const fill=new THREE.DirectionalLight(0xe6eefc,.65);fill.position.set(cx+R,R*.6,cz-R);scene.add(fill);
@@ -172,7 +172,7 @@ export function createHallScene({host,layout:L,line:startLine=null,quality='std'
 
  // ---------- process tour ----------
  const tour={active:false,paused:false,line:null,token:null,last:-1,runBefore:true};
- let run=startRun&&!reduced,labelMode=labels;
+ let run=startRun&&!reduced,labelMode=startLabels;
  const tourState=()=>({active:tour.active,paused:tour.paused,line:tour.line,idx:tour.last});
  function startTour(n){const l=L.lines[(n||curLine||0)-1];if(!l||l.empty)return false;const cand=tokens.filter(o=>o.l===l).sort((a,b)=>a.s-b.s)[0];if(!cand)return false;
   cand.s=0;cand.next=0;cand.wait=0;cand.wrapped=false;Object.assign(tour,{active:true,paused:false,line:l.index,token:cand,last:-1,runBefore:run});curLine=l.index;run=true;fly=null;
@@ -208,10 +208,11 @@ export function createHallScene({host,layout:L,line:startLine=null,quality='std'
 
  // ---------- start ----------
  curLine=startLine&&L.lines[startLine-1]&&!L.lines[startLine-1].empty?startLine:null;{const pr=presetOf(curLine);flyTo(pr.p,pr.t,true)}
- let raf=0,last=performance.now(),t=0,dead=false;const roofAbove=()=>camera.position.y>H-.6;
+ let raf=0,last=performance.now(),lastDraw=0,t=0,dead=false;const roofAbove=()=>camera.position.y>H-.6;
  function loop(now){if(dead)return;raf=requestAnimationFrame(loop);const dt=Math.min(.05,(now-last)/1000);last=now;t+=dt;
   // build a few stations per frame (about 14 ms of work), so the hall shows at once and fills up
-  if(built<jobs.length){const t0=performance.now();while(built<jobs.length&&performance.now()-t0<14)buildJob(jobs[built++]);emit('progress',built,jobs.length);if(built>=jobs.length)finish()}
+  // while it builds, frames are drawn only every 300 ms so the work is not held up by rendering (software GL included)
+  let draw=true;if(built<jobs.length){const t0=performance.now();while(built<jobs.length&&performance.now()-t0<40)buildJob(jobs[built++]);emit('progress',built,jobs.length);if(built>=jobs.length)finish();else{draw=now-lastDraw>300}}
   if(fly&&!tour.active){fly.t=Math.min(1,fly.t+dt/1.2);const e=fly.t<.5?2*fly.t*fly.t:1-Math.pow(-2*fly.t+2,2)/2;camera.position.lerpVectors(fly.from,fly.to,e);controls.target.lerpVectors(fly.tf,fly.tt,e);if(fly.t>=1)fly=null}
   if(run)stepTokens(dt);
   for(const f of updates){try{f(t,run)}catch(e){}}
@@ -220,7 +221,7 @@ export function createHallScene({host,layout:L,line:startLine=null,quality='std'
   // the camera stays inside the walls that were built
   const cp=camera.position;if(hall.sides.left&&cp.x<walls.x0)cp.x=walls.x0;if(hall.sides.right&&cp.x>walls.x1)cp.x=walls.x1;if(hall.sides.back&&cp.z<walls.z0)cp.z=walls.z0;if(hall.sides.front&&cp.z>walls.z1)cp.z=walls.z1;if(cp.y<.4)cp.y=.4;
   const above=roofAbove();hall.roof.visible=!above;overhead.visible=!above;
-  renderer.render(scene,camera)}
+  if(draw){renderer.render(scene,camera);lastDraw=now}}
  raf=requestAnimationFrame(loop);
 
  return {

@@ -48,7 +48,7 @@ export function SheetHost(){
  return <dialog ref={dlg} aria-labelledby="d-title" onClose={()=>setSpec(null)} onClick={e=>{if(e.target===dlg.current)close()}}>
   <div className="sheet">
    <div className="gal">
-    <img className="main" src={it?it.u:''} alt={it?(it.r?'3D render of ':it.s?'Catalogue sheet of ':'Photo of ')+spec.title:''}/>
+    {it?<img className="main" key={it.u} src={it.u} alt={(it.r?'3D render of ':it.s?'Catalogue sheet of ':'Photo of ')+spec.title}/>:<div className="main" aria-hidden="true"/>}
     <div className="gthumbs">{items.map((x,i)=><button key={x.u+i} type="button" aria-current={i===cur} aria-label={x.r?'3D render':x.s?'Catalogue sheet':'Photo '+(i+1)} onClick={()=>setCur(i)}><img src={x.u} alt="" loading="lazy"/>{x.r?<em>3D</em>:x.s?<em>SHEET</em>:null}</button>)}</div>
     <div className="nav"><button type="button" disabled={cur<=0} onClick={()=>setCur(cur-1)} aria-label="Previous photo">←</button><span className="cap">{it?it.c:'No photograph in the listing'}{items.length>1?` · ${cur+1} / ${items.length}`:''}</span><button type="button" disabled={cur>=items.length-1} onClick={()=>setCur(cur+1)} aria-label="Next photo">→</button></div>
    </div>
